@@ -5,30 +5,30 @@
 --
 drop table dict_book;
 create table dict_book (
-    num                  varchar(32)  not null primary key,
-    value                varchar(128) not null,
-    name                 varchar(128) not null,
-    class                varchar(2)   not null,
-    attr                 varchar(2)   not null,
-    jd                   varchar(2)   not null,
-    remark               varchar(1024), 
-    ts_c                 timestamp  default current timestamp
+    code         varchar(32)  not null primary key,
+    value        varchar(128) not null,
+    name         varchar(128) not null,
+    class        varchar(2)   not null,
+    attr         varchar(2)   not null,
+    jd           varchar(2)   not null,
+    memo         varchar(1024), 
+    ts_c         timestamp  default current timestamp
 ) in tbs_dat index in tbs_idx;
 
 --
 -- 末级科目信息
 --
 comment on table  dict_book          is '末级科目信息';
-comment on column dict_book.num      is '科目编号';
+comment on column dict_book.code     is '科目编号';
 comment on column dict_book.value    is '科目';
 comment on column dict_book.name     is '科目名称';
 comment on column dict_book.class    is '核算项描述';
 comment on column dict_book.attr     is '所属账套';
 comment on column dict_book.jd       is '方向';
-comment on column dict_book.remark   is '科目说明';
+comment on column dict_book.memo     is '科目说明';
 
 -- book
-insert into dict_book( num, value, name, class, attr, jd, remark) values
+insert into dict_book( code, value, name, class, attr, jd, memo) values
        ('2005.02',     'bamt_yhyf',     '应付银行-已核应付银行款', '2', '0', '2', '资金划拨成功数据、自有资金账户管理费' ),
        ('1020.03',     'bamt_yhys',     '应收银行-已核应收银行款', '1', '0', '1','资金划拨成功数据、自有资金利息收入数据' ),
        ('2005.03',     'bfee_yhyf',     '应付银行-已核应付银行手续费', '2', '1', '2', '交易发生时的情况下，银行手续费' ),

@@ -5,8 +5,6 @@ use warnings;
 #
 #  @para = (
 #     dbh  => $dbh,
-#     book => [ 'bamt_yhyf', 'bfee_yhyf' ],
-#     yspz => [ 'yspz_0001', 'yspz_0002' ],
 #     proc => {
 #         0001  => sub { ... },
 #     }
@@ -21,79 +19,30 @@ use warnings;
 sub new {
     my $class = shift;
     my $self  = bless { @_ }, $class;
-    unless( $self->{dbh} && $self->{book} && $self->{proc} ) {
+    unless( $self->{dbh} && $self->{proc} ) {
         return;
     }
+    my $dict_sth;
 
-    for my $name (@{delete $self->{book}}) {
+    # 产生所有账簿插入语句
+    $dict_sth = $self->{dbh}->prepare(qq/select value from dict_book/);
+    $dict_sth->execute();
+    my $book = $dict_sth->selectall_arrayref();
+    $dict_sth->finish();
+    $self->_book_insert($_) for @{$book};
 
-        my $seq = 'seq_' . $name;
+    # 产生所有原始配置更新语句
+    $dict_sth = $self->{dbh}->prepare(qq/select value from dict_yspz/);
+    $dict_sth->execute();
+    my $yspz = $dict_sth->selectall_arrayref();
+    $dict_sth->finish();
+    $self->_yspz_update($_) for @{$yspz};
 
-        # 取得nhash
-        my $sql_nhash = "select * from book_$name";
-        warn "sql_nhash[$sql_nhash]" if $ENV{ZAPP_DEBUG};
-        my $sth_nhash = $self->{dbh}->prepare("select * from book_$name") or return;
-        my %nhash = %{$sth_nhash->{NAME_hash}};
-        warn "nhash:\n" .  Data::Dump->dump(\%nhash) if $ENV{ZAPP_DEBUG};
-        delete $nhash{TS_C};
-        $sth_nhash->finish();
+    # 记账凭证id生成语句
+    $self->_jzpz_id();
 
-        # @key && @val
-        %nhash = reverse %nhash;
-        my @idx = sort keys %nhash;
-        my @val = @nhash{@idx};
-
-        # 产生insert sth
-        my $fld  = join ', ', @val;
-        my $mark = join ', ', ('?') x @val;
-        my $sql_ins = "insert into book_$name($fld, TS_C) values ($mark, current timestamp)";
-        warn "sql_ins[$sql_ins]" if $ENV{ZAPP_DEBUG};
-        my $sth_ins = $self->{dbh}->prepare($sql_ins) or return;
-
-        # 产生 seq sth
-        my $sql_seq = "values nextval for $seq";
-        my $sth_seq = $self->{dbh}->prepare("values nextval for $seq") or return;
-        warn "sql_seq[$sql_seq]" if $ENV{ZAPP_DEBUG};
-        $self->{book}->{$name} = [ $sth_seq, $sth_ins ];
-
-       # 批量产生函数      
-       no strict 'refs';
-       *{__PACKAGE__ . "::$name"} = sub {
-           my $self = shift;
-
-           warn "got args[@_]";
-
-           # 获取id
-           $self->{book}->{$name}->[0]->execute();
-           my ($id) = $self->{book}->{$name}->[0]->fetchrow_array();
-
-           # 插入记录
-           warn "execute with[$id @_]";
-           $self->{book}->{$name}->[1]->execute($id, @_);
-
-           # 返回id
-           return $id;
-       };
-    }
-
-    for my $name (@{delete $self->{yspz}}) {
-
-        # 准备yspz更新的sth
-        my $sql = qq/update $name set pstat = ? where id = ?/;
-        $self->{yspz}->{$name} = $self->{dbh}->prepare($sql) or return;
-
-        no strict 'refs';
-        *{ __PACKAGE__ . "::$name" } = sub {
-            my ($self, $id, $pstat) = @_;
-            $self->{yspz}->{$name}->execute($pstat, $id);
-            return $self;
-        };
-    }
-
-
-    $self->{jzpz_id} = $self->{dbh}->prepare(qq/values nextval for seq_jzpz/) or return;
-    my $sql_jzpz = qq/insert into jzpz(id, j_id, j_book, d_id, d_book, ys_type, ys_id, ts_c) values(?,?,?,?,?,?,?,current timestamp)/;
-    $self->{jzpz}  = $self->{dbh}->prepare($sql_jzpz) or return;
+    # 记账凭证插入语句
+    $self->_jzpz_insert();
 
     return $self;
 }
@@ -133,6 +82,106 @@ sub handle {
     return unless $proc;
     $proc->($self, $src) or return;
 }
+
+#
+sub _book_fld {
+
+    my ($self, $name) = @_;
+
+    # 取得nhash
+    my $sql_nhash = "select * from book_$name";
+    warn "sql_nhash[$sql_nhash]" if $ENV{ZAPP_DEBUG};
+    my $sth_nhash = $self->{dbh}->prepare("select * from book_$name") or return;
+    my %nhash = %{$sth_nhash->{NAME_hash}};
+    warn "nhash:\n" .  Data::Dump->dump(\%nhash) if $ENV{ZAPP_DEBUG};
+    delete $nhash{TS_C};
+    $sth_nhash->finish();
+
+    # @key && @val
+    %nhash = reverse %nhash;
+    my @idx = sort keys %nhash;
+    return [ @nhash{@idx} ];
+}
+
+# 账簿出入语句生成
+sub _book_insert {
+
+    my ($self, $name) = @_;
+
+    # 获取域名
+    my $fld = $self->_book_fld($name);
+    my $fstr  = join ', ', @$fld;
+    my $mark  = join ', ', ('?') x @$fld;
+
+    # 产生insert sth
+    my $sql_ins = "insert into book_$name($fstr, TS_C) values ($mark, current timestamp)";
+    warn "sql_ins[$sql_ins]" if $ENV{ZAPP_DEBUG};
+    my $sth_ins = $self->{dbh}->prepare($sql_ins) or return;
+
+    # 产生 seq sth
+    my $sql_seq = "values nextval for seq_$name";
+    warn "sql_seq[$sql_seq]" if $ENV{ZAPP_DEBUG};
+    my $sth_seq = $self->{dbh}->prepare($sql_seq) or return;
+
+    # 保存sth_seq, sth_ins
+    $self->{book}->{$name} = [ $sth_seq, $sth_ins ];
+
+    # 产生账簿插入函数
+    no strict 'refs';
+    *{__PACKAGE__ . "::$name"} = sub {
+        my $self = shift;
+
+        # 获取id
+        $self->{book}->{$name}->[0]->execute();
+        my ($id) = $self->{book}->{$name}->[0]->fetchrow_array();
+ 
+        # 插入记录
+        warn "execute with[$id @_]";
+        $self->{book}->{$name}->[1]->execute($id, @_);
+ 
+        # 返回id
+        return $id;
+   };
+}
+
+
+# 原始凭证更新语句生成
+sub _yspz_update {
+
+    my ($self, $name) = @_;
+
+    # 准备yspz更新的sth
+    my $sql = qq/update $name set pstat = ? where id = ?/;
+    $self->{yspz}->{$name} = $self->{dbh}->prepare($sql) or return;
+
+    no strict 'refs';
+    *{ __PACKAGE__ . "::$name" } = sub {
+        my ($self, $id, $pstat) = @_;
+        $self->{yspz}->{$name}->execute($pstat, $id);
+        return $self;
+    };
+}
+
+# 产生记账配置插入语句
+sub _jzpz_insert {
+    my $self = shift;
+    $self->{jzpz}  = $self->{dbh}->prepare(
+         qq/insert into jzpz(id, j_id, j_book, d_id, d_book, ys_type, ys_id, ts_c) values(?,?,?,?,?,?,?,current timestamp)/
+    ) or return;
+
+    return $self;
+}
+
+# 记账凭证: id生产语句
+sub _jzpz_id {
+    my $self = shift;
+    # 记账凭证: id成， jzpz插入
+    $self->{jzpz_id} = $self->{dbh}->prepare(qq/values nextval for seq_jzpz/) or return;
+
+    return $self;
+}
+
+
 
 1;
 

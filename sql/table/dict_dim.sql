@@ -5,10 +5,10 @@
 --
 drop table dict_dim;
 create table dict_dim (
-    dim                 char(30)      not null,
-    name                varchar(64)   not null,
-    remark              varchar(128),
-    ts_c                timestamp  default current timestamp
+    dim          char(30)      not null,
+    name         varchar(64)   not null,
+    memo         varchar(128),
+    ts_c         timestamp  default current timestamp
 ) in tbs_dat index in tbs_idx;
 
 --
@@ -17,10 +17,10 @@ create table dict_dim (
 comment on table  dict_dim               is '核算项字典表';
 comment on column dict_dim.dim 	         is '核算项';
 comment on column dict_dim.name          is '核算项中文名';
-comment on column dict_dim.remark        is '核算项描述';
+comment on column dict_dim.memo          is '核算项描述';
 
 -- data
-insert into dict_dim(book_num, dim, name, remark) values
+insert into dict_dim(dim, name, memo) values
 ( 'bfj_acct',   '银行账户号及相应开户行', '银行账户号及相应开户行'),
 ( 'bi',         '银行接口编号',           '银行接口编号'          ),
 ( 'c',          '客户编号',               '客户编号'              ),

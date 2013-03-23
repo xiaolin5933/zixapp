@@ -8,7 +8,7 @@ create table dim_dict_zjbd_type (
 -- primary key
     id                  integer  primary key not null,
     name                varchar(30)          not null,
-    
+    memo                varchar(128),    
 -- mis
     ts_c                timestamp  default current timestamp
 ) in tbs_dat index in tbs_idx;
@@ -21,6 +21,7 @@ create table dim_dict_zjbd_type (
 comment on table   dim_dict_zjbd_type               is '易宝资金账户号字典';
 comment on column  dim_dict_zjbd_type.id            is 'id';
 comment on column  dim_dict_zjbd_type.name          is '资金变动类型名';
+comment on column  dim_dict_zjbd_type.memo          is '描述';
 
 
 -- default data

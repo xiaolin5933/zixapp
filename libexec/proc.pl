@@ -18,8 +18,6 @@ sub {
     # 构建proc对象
     my $proc = ZAPP::PROC->new(
         dbh  => $dbh, 
-        book => $cfg->{book}, 
-        yspz => $cfg->{yspz}, 
         proc => $cfg->{proc} 
     ) or confess "can not ZAPP::PROC->new";
 
