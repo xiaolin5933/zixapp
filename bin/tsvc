@@ -2,29 +2,29 @@
 use strict;
 use warnings;
 
-use ZAPP::PROC;
+use ZAPP::Service;
 use Getopt::Long;
 use Zeta::Run;
 use DBI;
 use Carp;
 
-my $yspz;
+my $svc;
 my $dfile;
 my $rtn = GetOptions(
-    'yspz|y=s'   => \$yspz,
+    'svc|y=s'   => \$svc,
     'dfile|d=s'  => \$dfile,
 );
 unless($rtn) {
     &usage();
 }
-unless($yspz) {
+unless($svc) {
     &usage();
 }
 unless($dfile) {
-    $dfile = "$ENV{ZIXAPP_HOME}/t/$yspz.dat";
+    $dfile = "$ENV{ZIXAPP_HOME}/t/$svc.dat";
 }
 
-my $file = "$ENV{ZIXAPP_HOME}/conf/proc/$yspz.proc";
+my $file = "$ENV{ZIXAPP_HOME}/conf/svc/$svc.proc";
 unless(-f $file) {
     die "$file does not exists";
 }
@@ -35,7 +35,7 @@ unless( -f $dfile) {
 # 加载data, proc
 my $data = do $dfile or die "can not do file[$dfile] error[$@]";;
 my $sub  = do $file  or die "can not do file[$file] error[$@]";
-my %proc = ( $yspz => $sub );
+my %proc = ( $svc => $sub );
 
 # 连接数据库, 设置默认schema
 my $dbh = DBI->connect(
@@ -59,9 +59,6 @@ $dbh->do("set current schema $ENV{DB_SCHEMA}") or confess "can not set current s
 my $proc = ZAPP::PROC->new( dbh => $dbh, proc => \%proc);
 Data::Dump->dump($proc);
 
-#
-# 测试所有数据
-#
 for (@$data) {
     $proc->handle($_);
 }
@@ -69,9 +66,5 @@ for (@$data) {
 ############################
 
 sub usage {
-    die "tproc --yspz|-y 0001 -d 0001.dat";
+    die "tproc --svc|-y 0001 -d 0001.dat";
 }
-
-
-__END__
-

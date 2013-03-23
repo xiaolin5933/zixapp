@@ -1,0 +1,2 @@
+cd $ZIXAPP_HOME/log;
+rm -fr *.log;
