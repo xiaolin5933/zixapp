@@ -6,7 +6,7 @@ create table book_deposit_bfj (
     id          bigint primary key not null,
     
     -- dimension
-    yp_acct  integer      not null,
+    bfj_acct  integer      not null,
     -- dimension (tp)
     period      date         not null,
     
@@ -37,20 +37,20 @@ create sequence seq_deposit_bfj as bigint start with 1 increment by 1 minvalue 1
 
 
 comment on table  book_deposit_bfj         is '账薄 - 银行存款 - 备付金存款';
-comment on column book_deposit_bfj.yp_acct is '银行账户号及相应开户行';
+comment on column book_deposit_bfj.bfj_acct is '银行账户号及相应开户行';
 comment on column book_deposit_bfj.period  is '会计期间';
 comment on column book_deposit_bfj.j       is '借方发生额';
 
 
 -- MQT
 create table sum_deposit_bfj as (
-    select yp_acct   as yp_acct,
+    select bfj_acct   as bfj_acct,
 	   period     as period,
 	   sum(j)    as j,
 	   sum(d)    as d,
 	   count(*)  as cnt
     from book_deposit_bfj
-    group by yp_acct, period
+    group by bfj_acct, period
 )
 data initially deferred refresh immediate
 in tbs_dat;

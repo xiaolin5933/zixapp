@@ -25,5 +25,5 @@ comment on column dim_dict_wlzj_type.name          is '往来资金类型名称'
 
 insert into dim_dict_wlzj_type(id, name) 
        values(1, '客户手续费'),
-       values(2, '利息收入');
+             (2, '利息收入');
 

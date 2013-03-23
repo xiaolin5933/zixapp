@@ -6,7 +6,7 @@ create table book_blc (
     id          bigint primary key not null,
     
     -- dimension
-    yp_acct   integer      not null,
+    bfj_acct   integer      not null,
     bi        integer      not null,
     e_date   date          not null,
     -- dimension (tp)
@@ -41,7 +41,7 @@ create sequence seq_blc as bigint start with 1 increment by 1 minvalue 1 no maxv
 
 comment on table  book_blc          is '应付账款 - 银行 - 银行长款';
 comment on column book_blc.id       is '主键';
-comment on column book_blc.yp_acct  is '银行账户号及相应开户行';
+comment on column book_blc.bfj_acct  is '银行账户号及相应开户行';
 comment on column book_blc.bi       is '银行接口编号';
 comment on column book_blc.e_date   is '差错日期';
 comment on column book_blc.period   is '会计期间';
@@ -52,7 +52,7 @@ comment on column book_blc.j        is '借方发生额';
 
 -- MQT
 create table sum_blc as (
-    select yp_acct  as yp_acct,
+    select bfj_acct  as bfj_acct,
 	   bi       as bi,
 	   e_date   as e_date,
 	   period     as period,
@@ -60,7 +60,7 @@ create table sum_blc as (
 	   sum(d)   as d,
 	   count(*) as cnt
     from book_blc
-    group by yp_acct, bi, e_date, period
+    group by bfj_acct, bi, e_date, period
 )
 data initially deferred refresh immediate
 in tbs_dat;

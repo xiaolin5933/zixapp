@@ -6,7 +6,7 @@ create table book_bsc_zyzj (
     id          bigint primary key not null,
     
     -- dimension
-    yp_acct  integer      not null,
+    zyzj_acct  integer      not null,
     e_date  date         not null,
     -- dimension (tp)
     period      date         not null,
@@ -39,7 +39,7 @@ create sequence seq_bsc_zyzj as bigint start with 1 increment by 1 minvalue 1 no
 
 comment on table  book_bsc_zyzj is '应收账款 - 银行 - 银行短款';
 comment on column book_bsc_zyzj.id         is '主键';
-comment on column book_bsc_zyzj.yp_acct is '银行账户号及相应开户行';
+comment on column book_bsc_zyzj.zyzj_acct is '银行账户号及相应开户行';
 comment on column book_bsc_zyzj.e_date is '差错日期';
 comment on column book_bsc_zyzj.period     is '会计期间';
 comment on column book_bsc_zyzj.j      is '借方发生额';
@@ -49,14 +49,14 @@ comment on column book_bsc_zyzj.j      is '借方发生额';
 
 -- MQT
 create table sum_bsc_zyzj as (
-    select yp_acct   as yp_acct,
+    select zyzj_acct   as zyzj_acct,
 	   e_date    as e_date,
 	   period     as period,
 	   sum(j)    as j,
 	   sum(d)    as d,
 	   count(*)  as cnt
     from book_bsc_zyzj
-    group by yp_acct, e_date, period
+    group by zyzj_acct, e_date, period
 )
 data initially deferred refresh immediate
 in tbs_dat;

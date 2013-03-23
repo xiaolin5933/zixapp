@@ -6,7 +6,7 @@ create table book_txamt_dgd (
     id          bigint primary key not null,
     
     -- dimension
-    yp_acct  integer  not null,
+    bfj_acct  integer  not null,
     bi       integer  not null,
     tx_date     date     not null,
     -- dimension (tp)
@@ -40,7 +40,7 @@ create sequence seq_txamt_dgd as bigint start with 1 increment by 1 minvalue 1 n
 
 comment on table  book_txamt_dgd           is '应收银行 - 待勾兑应收交易款';
 comment on column book_txamt_dgd.id        is '主键';
-comment on column book_txamt_dgd.yp_acct   is '银行账户号及相应开户行';
+comment on column book_txamt_dgd.bfj_acct   is '银行账户号及相应开户行';
 comment on column book_txamt_dgd.bi        is '银行接口编号';
 comment on column book_txamt_dgd.tx_date   is '交易日期';
 comment on column book_txamt_dgd.period    is '会计期间';
@@ -51,7 +51,7 @@ comment on column book_txamt_dgd.j         is '借方发生额';
 
 -- MQT
 create table sum_txamt_dgd as (
-    select yp_acct   as yp_acct,
+    select bfj_acct   as bfj_acct,
 	   bi	     as bi,
 	   tx_date   as tx_date,
 	   period     as period,
@@ -59,7 +59,7 @@ create table sum_txamt_dgd as (
 	   sum(d)    as d,
 	   count(*)  as cnt
     from book_txamt_dgd
-    group by yp_acct, bi, tx_date, period
+    group by bfj_acct, bi, tx_date, period
 )
 data initially deferred refresh immediate
 in tbs_dat;

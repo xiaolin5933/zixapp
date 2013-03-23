@@ -6,7 +6,7 @@ create table book_bamt_yhys (
     id          bigint primary key not null,
     
     -- dimension
-    yp_acct     integer      not null,
+    zyzj_acct     integer      not null,
     zjbd_type   integer      not null,
     zjbd_date      date         not null,
     -- dimension (tp)
@@ -39,7 +39,7 @@ create sequence seq_bamt_yhys as bigint start with 1 increment by 1 minvalue 1 n
 
 comment on table  book_bamt_yhys              is '应收银行 - 已核应收银行款';
 comment on column book_bamt_yhys.id           is '主键';
-comment on column book_bamt_yhys.yp_acct      is '银行账户号及相应开户行';
+comment on column book_bamt_yhys.zyzj_acct      is '银行账户号及相应开户行';
 comment on column book_bamt_yhys.zjbd_type    is '资金变动类型';
 comment on column book_bamt_yhys.zjbd_date    is '银行出入账日期';
 comment on column book_bamt_yhys.period       is '会计期间';
@@ -49,7 +49,7 @@ comment on column book_bamt_yhys.j            is '借方发生额';
 
 -- MQT
 create table sum_bamt_yhys as (
-    select yp_acct     as yp_acct,
+    select zyzj_acct     as zyzj_acct,
 	   zjbd_type   as zjbd_type,
 	   zjbd_date   as zjbd_date,
  	   period      as period,
@@ -57,7 +57,7 @@ create table sum_bamt_yhys as (
 	   sum(d)      as d,
 	   count(*)    as cnt
     from book_bamt_yhys
-    group by yp_acct, zjbd_type, zjbd_date, period
+    group by zyzj_acct, zjbd_type, zjbd_date, period
 )
 data initially deferred refresh immediate
 in tbs_dat;

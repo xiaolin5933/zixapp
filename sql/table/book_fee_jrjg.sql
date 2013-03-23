@@ -6,7 +6,7 @@ create table book_fee_jrjg (
     id          bigint primary key not null,
     
     -- dimension
-    yp_acct  integer      not null,
+    zyzj_acct  integer      not null,
     -- dimension (tp)
     period      date         not null,
     
@@ -35,19 +35,19 @@ create sequence seq_fee_jrjg as bigint start with 1 increment by 1 minvalue 1 no
 -- 财务费用 - 金融机构手续费 
 --
 comment on table  book_fee_jrjg         is '财务费用 - 金融机构手续费';
-comment on column book_fee_jrjg.yp_acct is '银行账户号及相应开户行';
+comment on column book_fee_jrjg.zyzj_acct is '银行账户号及相应开户行';
 comment on column book_fee_jrjg.period  is '会计期间';
 comment on column book_fee_jrjg.j       is '借方发生额';
 
 -- MQT
 create table sum_fee_jrjg as (
-    select yp_acct   as yp_acct,
+    select zyzj_acct   as zyzj_acct,
 	   period     as period,
 	   sum(j)    as j,
 	   sum(d)    as d,
 	   count(*)  as cnt
     from book_fee_jrjg
-    group by yp_acct, period
+    group by zyzj_acct, period
 )
 data initially deferred refresh immediate
 in tbs_dat;
