@@ -32,7 +32,7 @@ sub new {
     $self->_book_insert($_) for @{$book};
 
     # 产生所有原始配置更新语句
-    $dict_sth = $self->{dbh}->prepare(qq/select value from dict_yspz/);
+    $dict_sth = $self->{dbh}->prepare(qq/select memo from dict_yspz/);
     $dict_sth->execute();
     my $yspz = $dict_sth->selectall_arrayref();
     $dict_sth->finish();
