@@ -10,22 +10,40 @@ use warnings;
 #
 #
 sub {
-    my ($proc, $src) = @_; 
+    my ($proc, $src) = @_;   # $proc是处理对象， $src是原始凭证
 
-    my $ys_id;
+    my $ys_id = $proc->yspz_id();
     my $j_id;
     my $d_id;
     my $jzpz_id;
+    my $j;
+    my $d;
 
+    #########################################
     # 插入分录1
+    # 0> 产生记账id  $proc->jzpz_id();
     $jzpz_id = $proc->jzpz_id();
-    $j_id = $proc->bamt_yhyf('1', '1', '2012-04-24', '2012-04-24', '100', '100', 1, 2, $jzpz_id);
-    $j_id = $proc->bfee_yhyf('1', '1', '2012-04-24', '2012-04-24', '100', '100', 1, 2, $jzpz_id);
-    # $proc->jzpz();
 
-    # 更新原始凭证状态
-    # $proc->yspz_0001(1); 
-    
+    # 1> 产生分录数据记录 $j 与 $d
+    $j = [ '1', '1', '2012-04-24', '2012-04-24', '100', '100', 1, 2, $jzpz_id ];   
+    $d = [ '1', '1', '2012-04-24', '2012-04-24', '100', '100', 1, 2, $jzpz_id ];  
+
+    # 2> 插入借方book, 插入贷方book
+    $j_id = $proc->bfee_yhyf(@$j);
+    $j_id = $proc->bfee_yhyf(@$j);
+    $j_id = $proc->bfee_yhyf(@$j);
+
+    $d_id = $proc->bamt_yhyf(@$d);
+    $d_id = $proc->bamt_yhyf(@$d);
+    $d_id = $proc->bamt_yhyf(@$d);
+
+    # 3> 插入记账凭证
+    # $proc->jzpz($jzpz_id, $j_id,  $j_book, $d_id, $d_book, '0001', $src->{ys_id}, '1.1');
+
+    #########################################
+    # 插入分录2
+    # $proc->yspz_0001( [] );
+
     $proc->commit();
 };
 

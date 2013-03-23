@@ -33,11 +33,11 @@ create sequence seq_bsc_zyzj as bigint start with 1 increment by 1 minvalue 1 no
 
 
 --
--- 应收账款 - 银行 - 银行短款 
+-- 应收账款-银行-自有资金银行短款 
 --
 
 
-comment on table  book_bsc_zyzj is '应收账款 - 银行 - 银行短款';
+comment on table  book_bsc_zyzj is '应收账款-银行-自有资金银行短款';
 comment on column book_bsc_zyzj.id         is '主键';
 comment on column book_bsc_zyzj.zyzj_acct is '银行账户号及相应开户行';
 comment on column book_bsc_zyzj.e_date is '差错日期';

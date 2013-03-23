@@ -1,6 +1,6 @@
 --
-drop table book_txamt_dgd;
-create table book_txamt_dgd (
+drop table book_bfee_cwwf;
+create table book_bfee_cwwf (
 
     -- primary key
     id          bigint primary key not null,
@@ -28,34 +28,34 @@ create table book_txamt_dgd (
 ) in tbs_dat index in tbs_idx;
 
 
-drop sequence seq_txamt_dgd;
-create sequence seq_txamt_dgd as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
+drop sequence seq_bfee_cwwf;
+create sequence seq_bfee_cwwf as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
--- 应收银行 - 待勾兑应收交易款 
+-- 应付账款-银行-财务外付银行手续费 
 --
 
 
-comment on table  book_txamt_dgd           is '应收银行 - 待勾兑应收交易款';
-comment on column book_txamt_dgd.id        is '主键';
-comment on column book_txamt_dgd.bi        is '银行接口编号';
-comment on column book_txamt_dgd.tx_date   is '交易日期';
-comment on column book_txamt_dgd.period    is '会计期间';
-comment on column book_txamt_dgd.j         is '借方发生额';
+comment on table  book_bfee_cwwf           is '应付账款-银行-财务外付银行手续费';
+comment on column book_bfee_cwwf.id        is '主键';
+comment on column book_bfee_cwwf.bi        is '银行接口编号';
+comment on column book_bfee_cwwf.tx_date   is '交易日期';
+comment on column book_bfee_cwwf.period    is '会计期间';
+comment on column book_bfee_cwwf.j         is '借方发生额';
 
 
 
 
 -- MQT
-create table sum_txamt_dgd as (
+create table sum_bfee_cwwf as (
     select bi	     as bi,
 	   tx_date   as tx_date,
 	   period     as period,
 	   sum(j)    as j,
 	   sum(d)    as d,
 	   count(*)  as cnt
-    from book_txamt_dgd
+    from book_bfee_cwwf
     group by bi, tx_date, period
 )
 data initially deferred refresh immediate
@@ -63,4 +63,4 @@ in tbs_dat;
 
 
 -- integrity unchecked
-set integrity for sum_txamt_dgd materialized query immediate unchecked;
+set integrity for sum_bfee_cwwf materialized query immediate unchecked;

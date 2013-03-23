@@ -6,7 +6,7 @@ create table book_txamt_dqr (
     id          bigint primary key not null,
     
     -- dimension
-    c        integer  not null,
+    bi          integer  not null,
     tx_date     date     not null,
     -- dimension (tp)
     period      date         not null,
@@ -39,7 +39,7 @@ create sequence seq_txamt_dqr as bigint start with 1 increment by 1 minvalue 1 n
 
 comment on table  book_txamt_dqr          is '其他应付款 - 待确认交易款';
 comment on column book_txamt_dqr.id       is '主键';
-comment on column book_txamt_dqr.c        is '客户编号';
+comment on column book_txamt_dqr.bi       is '银行接口编号';
 comment on column book_txamt_dqr.tx_date  is '交易日期';
 comment on column book_txamt_dqr.period   is '会计期间';
 comment on column book_txamt_dqr.j        is '借方发生额';
@@ -49,14 +49,14 @@ comment on column book_txamt_dqr.j        is '借方发生额';
 
 -- MQT
 create table sum_txamt_dqr as (
-    select c        as c,
+    select bi       as bi,
 	   tx_date  as tx_date,
 	   period     as period,
 	   sum(j)   as j,
 	   sum(d)   as d,
 	   count(*) as cnt
     from book_txamt_dqr
-    group by c, tx_date, period
+    group by bi, tx_date, period
 )
 data initially deferred refresh immediate
 in tbs_dat;

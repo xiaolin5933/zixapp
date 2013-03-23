@@ -36,7 +36,7 @@ create sequence seq_wlzj_yfzy as bigint start with 1 increment by 1 minvalue 1 n
 --
 comment on table  book_wlzj_yfzy            is '往来 - 应付自有';
 comment on column book_wlzj_yfzy.id         is '主键';
-comment on column book_wlzj_yfzy.wlzj_type  is '类型';
+comment on column book_wlzj_yfzy.wlzj_type  is '往来类型';
 comment on column book_wlzj_yfzy.period     is '会计期间';
 comment on column book_wlzj_yfzy.j          is '借方发生额';
 

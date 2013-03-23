@@ -1,0 +1,47 @@
+1、名词缩写
+    yhys         : 已核应收
+    yhyf         : 已核应付
+    yfbf         : 应付备付
+    yfzy         : 应付自有
+    fee          : 手续费
+    bamt         : 银行款
+    bfee         : 银行手续费
+    cfee         : 客户手续费
+    yp           : 易宝
+    zyzj         : 自有资金
+    jrjg         : 金融机构
+    bfj          : 备付金
+    txamt        : 交易金额
+    bsc          : 银行短款
+    blc          : 银行长款
+    dqhf         : 定期划付
+    dfss         : 垫付损失
+    zhlx         : 账户利息
+    dqr          : 待确认
+    dgd          : 待勾兑
+    cust         : 客户
+    acct         : 账户
+    fee          : 手续费
+    cost         : 成本
+    income       : 收入
+    deposit      : 存款
+    c            : 客户(id,)
+    p            : 产品(id,)
+    e            : 差错
+    tx           : 交易
+    zjbd         : 资金变动
+
+2、核算项
+    c            : 客户id
+    p            : 产品id
+    bi           : 银行接口编号
+    period       : 期间日期
+    e_date       : 差错日期
+    tx_date      : 交易日期
+    wlzj_type    : 往来资金类型
+    zjbd_type    : 资金变动类型
+    zyzj_acct    : 自有资金账号
+
+3、账簿名称
+   
+  
