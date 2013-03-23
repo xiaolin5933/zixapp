@@ -7,7 +7,7 @@ drop table dim_dict_zjbd_type;
 create table dim_dict_zjbd_type (
 -- primary key
     id                  integer  primary key not null,
-    name                varchar(30)          not null,
+    name                varchar(32)          not null,
     memo                varchar(128),    
 -- mis
     ts_c                timestamp  default current timestamp

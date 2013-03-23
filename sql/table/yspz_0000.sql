@@ -34,5 +34,3 @@ comment on column yspz_0000.revoke_user  is '撤销者';
 drop sequence seq_yspz_0000;
 create sequence seq_yspz_0000 as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
 
-
-
