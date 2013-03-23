@@ -5,10 +5,10 @@
 --
 drop table dim_dict_wlzj_type;
 create table dim_dict_wlzj_type (
-    id                  integer       not null primary key,
-    name                char(32)      not null,
-    memo                varchar(128),
-    ts_c                timestamp  default current timestamp
+    id       integer       not null primary key,
+    name     char(32)      not null,
+    memo     varchar(128),
+    ts_c     timestamp  default current timestamp
 ) in tbs_dat index in tbs_idx;
 
 

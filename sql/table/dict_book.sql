@@ -6,11 +6,11 @@
 drop table dict_book;
 create table dict_book (
     code         varchar(32)  not null primary key,
-    value        varchar(128) not null,
+    value        char(32)     not null,
     name         varchar(128) not null,
-    class        varchar(2)   not null,
-    attr         varchar(2)   not null,
-    jd           varchar(2)   not null,
+    class        char(2)      not null,
+    attr         char(2)      not null,
+    jd           char(2)      not null,
     memo         varchar(1024), 
     ts_c         timestamp  default current timestamp
 ) in tbs_dat index in tbs_idx;

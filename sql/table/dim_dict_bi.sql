@@ -5,10 +5,10 @@
 --
 drop table dim_dict_bi;
 create table dim_dict_bi (
-    id          integer       not null primary key,
-    name        varchar(128)  not null,
-    memo        varchar(128),
-    ts_c                timestamp  default current timestamp
+    id     integer       not null primary key,
+    name   varchar(128)  not null,
+    memo   varchar(128),
+    ts_c   timestamp  default current timestamp
 ) in tbs_dat index in tbs_idx;
 
 --
