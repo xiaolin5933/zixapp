@@ -1,9 +1,7 @@
 drop table yspz_temp;
 create table yspz_temp (
-
 -- id
 -- 处理状态
-
     id                   bigint primary key not null,
     status               char(1) not null,
 
@@ -15,7 +13,7 @@ create table yspz_temp (
     revoke_cause         varchar(512),
     revoke_user          int,
     ts_revoke            timestamp,
-
+--
     memo                 varchar(512),
     ts_c                 timestamp  default current timestamp
   

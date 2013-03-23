@@ -1,6 +1,5 @@
 drop table yspz_0000;
 create table yspz_0000 (
-
     -- primary key
     id             bigint primary key not null,
 
@@ -18,7 +17,7 @@ create table yspz_0000 (
     period          date,
 
     ts_c            timestamp default current timestamp
-  
+
 ) in tbs_dat index in tbs_idx;
 
 comment on column yspz_0000.id           is '原始配置id';
