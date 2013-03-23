@@ -27,12 +27,12 @@ sub new {
 
     # 产生所有账簿插入语句
     my $book = $self->{dbh}->selectcol_arrayref(qq/select value from dict_book/);
-    Data::Dump->dump($book);
+    # Data::Dump->dump($book);
     $self->_book_insert($_) for @$book;
 
     # 产生所有原始配置更新语句
     my $yspz = $self->{dbh}->selectcol_arrayref(qq/select code from dict_yspz/);
-    Data::Dump->dump($yspz);
+    # Data::Dump->dump($yspz);
     $self->_yspz_update($_) for @$yspz;
 
     # 记账凭证id生成语句
@@ -125,6 +125,7 @@ sub _book_insert {
 
     # 产生账簿插入函数
     no strict 'refs';
+    no warnings 'redefine';
     *{__PACKAGE__ . "::$name"} = sub {
         my $self = shift;
 
@@ -133,7 +134,7 @@ sub _book_insert {
         my ($id) = $self->{book}->{$name}->[0]->fetchrow_array();
  
         # 插入记录
-        warn "execute with[$id @_]";
+        # warn "execute with[$id @_]";
         $self->{book}->{$name}->[1]->execute($id, @_);
  
         # 返回id
@@ -152,6 +153,7 @@ sub _yspz_update {
     $self->{yspz}->{$name} = $self->{dbh}->prepare($sql) or return;
 
     no strict 'refs';
+    no warnings 'redefine';
     *{ __PACKAGE__ . "::yspz_$name" } = sub {
         my ($self, $id, $pstat) = @_;
         $self->{yspz}->{$name}->execute($pstat, $id);
@@ -183,4 +185,5 @@ sub _jzpz_id {
 1;
 
 __END__
+
 
