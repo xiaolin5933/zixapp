@@ -180,6 +180,22 @@ sub _jzpz_id {
     return $self;
 }
 
+sub DESTROY {
+
+    my $self = shift;
+
+    $self->{jzpz}->finish();
+    $self->{jzpz_id}->finish();
+    for (keys %{$self->{book}}) {
+       $self->{book}->{$_}->[0]->finish();
+       $self->{book}->{$_}->[1]->finish();
+    }
+    for (keys %{$self->{yspz}}) {
+        $self->{yspz}->{$_}->finish();
+    }
+    $self->{dbh}->rollback();
+    $self->{dbh}->disconnect();
+}
 
 
 1;

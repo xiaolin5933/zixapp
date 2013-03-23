@@ -6,11 +6,7 @@ use Test::Differences;
 use ZAPP::PROC;
 use Carp;
 
-#
-# ZAPP::PROC::Test->new();
-#
-sub new {
-
+sub dbh {
     my $class = shift;
     
     # 连接数据库, 设置默认schema
@@ -30,6 +26,16 @@ sub new {
         exit 0;
     }
     $dbh->do("set current schema $ENV{DB_SCHEMA}") or confess "can not set current schema $ENV{DB_SCHEMA}";
+    return $dbh;
+}
+
+#
+# ZAPP::PROC::Test->new();
+#
+sub new {
+
+    my $class = shift;
+    my $dbh = $class->dbh();
 
     # 找出所有book 
     my $books = $dbh->selectcol_arrayref(qq/select value from dict_book/);
@@ -110,6 +116,12 @@ sub execute {
 
     # 比较%result 与 $exp
     eq_or_diff(\%result, $exp, $name);
+}
+
+#
+#
+#
+sub setup {
 }
 
 #

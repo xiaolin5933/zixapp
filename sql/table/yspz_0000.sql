@@ -2,6 +2,10 @@ drop table yspz_0000;
 create table yspz_0000 (
     -- primary key
     id             bigint primary key not null,
+    status         char(1) not null,
+
+    -- 会计期间(tp)
+    period          date,
 
     -- 
     cause           varchar(1024) not null,
@@ -10,12 +14,10 @@ create table yspz_0000 (
     -- 撤销
     flag            char(2) not null   default '0',
     revoke_cause    varchar(1024),
-    revoke_ts       timestamp,
+    ts_revoke       timestamp,
     revoke_user     integer,
 
-    -- 会计期间(tp)
-    period          date,
-
+    memo            varchar(512),
     ts_c            timestamp default current timestamp
 
 ) in tbs_dat index in tbs_idx;
@@ -27,7 +29,7 @@ comment on column yspz_0000.ts_c         is '创建时间';
 
 comment on column yspz_0000.flag         is '撤销标志';
 comment on column yspz_0000.revoke_cause is '撤销原因';
-comment on column yspz_0000.revoke_ts    is '撤销时间';
+comment on column yspz_0000.ts_revoke    is '撤销时间';
 comment on column yspz_0000.revoke_user  is '撤销者';
 
 drop sequence seq_yspz_0000;

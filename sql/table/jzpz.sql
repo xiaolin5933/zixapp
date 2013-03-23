@@ -15,8 +15,8 @@ create table jzpz (
     
     j_id                 bigint     not null,
     d_id                 bigint     not null,
-    j_book               char(4)    not null,
-    d_book               char(4)    not null,
+    j_book               int        not null,
+    d_book               int        not null,
     ys_type              char(4)    not null,
     ys_id                bigint     not null,
     mark                 char(10),

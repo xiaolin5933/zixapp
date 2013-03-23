@@ -25,6 +25,8 @@ comment on column dim_dict_product.memo          is '描述';
 -- data
 
 insert into dim_dict_product(id, name) values
-    (1, '直联银联POS收单'),
-    (2, '结算');
+    (1, '基金收款'),
+    (2, '基金结算'),
+    (3, '基金委托出款'),
+    (4, '基金委托出款汇入');
 
