@@ -1,4 +1,70 @@
 #!/usr/bin/perl
+use strict;
+use warnings;
+
 use ZAPP::PROC;
+use Getopt::Long;
+use Zeta::Run;
+use DBI;
+use Carp;
 
+my $yspz;
+my $dfile;
+my $rtn = GetOptions(
+    'yspz|y=s'   => \$yspz,
+    'dfile|d=s'  => \$dfile,
+);
+unless($rtn) {
+    &usage();
+}
+unless($yspz) {
+    &usage();
+}
+unless($dfile) {
+    $dfile = "$ENV{ZIXAPP_HOME}/t/$yspz.dat";
+}
 
+my $file = "$ENV{ZIXAPP_HOME}/conf/proc/$yspz.proc";
+unless(-f $file) {
+    die "$file does not exists";
+}
+unless( -f $dfile) {
+    die "$dfile does not exists";
+}
+
+# 加载data, proc
+my $data = do $dfile or die "can not do file[$dfile] error[$@]";;
+my $sub  = do $file  or die "can not do file[$file] error[$@]";
+my %proc = ( $yspz => $sub );
+
+# 连接数据库, 设置默认schema
+my $dbh = DBI->connect(
+    "dbi:DB2:$ENV{DB_NAME}",
+    @ENV{qw/DB_USER DB_PASS/},
+    {
+        RaiseError       => 1,
+        PrintError       => 0,
+        AutoCommit       => 0,
+        FetchHashKeyName => 'NAME_lc',
+        ChopBlanks       => 1,
+    }
+);
+unless($dbh) {
+    zlogger->error("can not connet db[@ENV{qw/DB_ANME DB_USER DB_PASS/}]");
+    exit 0;
+}
+$dbh->do("set current schema $ENV{DB_SCHEMA}") or confess "can not set current schema $ENV{DB_SCHEMA}";
+
+# 构建proc对象 
+my $proc = ZAPP::PROC->new( dbh => $dbh, proc => \%proc);
+Data::Dump->dump($proc);
+
+for (@$data) {
+    $proc->handle($_);
+}
+
+############################
+
+sub usage {
+    die "tproc --yspz|-y 0001 -d 0001.dat";
+}

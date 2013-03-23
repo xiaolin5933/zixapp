@@ -7,7 +7,7 @@ use warnings;
 #   stomp       => $args->{stomp},
 #   dbh         => $args->{dbh},
 #   serrializer => $args->{serializer},
-#   service     => $args->{service}->{svc},
+#   svc         => { xxx => sub { ... }, }
 # }
 #
 sub new {
@@ -19,7 +19,7 @@ sub handle {
     my ($self, $req)  = @_;
     warn "-----------------got request------------------\n";
     Data::Dump->dump($req);
-    return $self->{service}->{$req->{svc}}->($self, $req);
+    return $self->{svc}->{$req->{svc}}->($self, $req);
 }
 
 1;

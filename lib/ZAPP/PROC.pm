@@ -1,6 +1,7 @@
 package ZAPP::PROC;
 use strict;
 use warnings;
+use Data::Dump;
 
 #
 #  @para = (
@@ -11,32 +12,28 @@ use warnings;
 #  );
 #-----------------------------------------------------------------
 # 动态添加的功能:
-# $proc->jzpz_id()                     : 返回id
-# $proc->jzpz($f1, $f2, $f3, ....)     : 插入记账凭证
-# $proc->xxx_book($f1, $f2,...)        : 插入账簿记录， 返回j_id or d_id
-# $proc->yspz_xxxx($ys_id, $pstat)     : 更新原始凭证状态
+# $proc->jzpz_id()                   : 返回id
+# $proc->jzpz($f1, $f2, $f3, ....)   : 插入记账凭证
+# $proc->bamt_yhyf($f1, $f2,...)     : 插入账簿记录， 返回j_id or d_id
+# $proc->yspz_0000($ys_id, $pstat)   : 更新原始凭证状态
 #
 sub new {
+
     my $class = shift;
     my $self  = bless { @_ }, $class;
     unless( $self->{dbh} && $self->{proc} ) {
         return;
     }
-    my $dict_sth;
 
     # 产生所有账簿插入语句
-    $dict_sth = $self->{dbh}->prepare(qq/select value from dict_book/);
-    $dict_sth->execute();
-    my $book = $dict_sth->selectall_arrayref();
-    $dict_sth->finish();
-    $self->_book_insert($_) for @{$book};
+    my $book = $self->{dbh}->selectcol_arrayref(qq/select value from dict_book/);
+    Data::Dump->dump($book);
+    $self->_book_insert($_) for @$book;
 
     # 产生所有原始配置更新语句
-    $dict_sth = $self->{dbh}->prepare(qq/select memo from dict_yspz/);
-    $dict_sth->execute();
-    my $yspz = $dict_sth->selectall_arrayref();
-    $dict_sth->finish();
-    $self->_yspz_update($_) for @{$yspz};
+    my $yspz = $self->{dbh}->selectcol_arrayref(qq/select code from dict_yspz/);
+    Data::Dump->dump($yspz);
+    $self->_yspz_update($_) for @$yspz;
 
     # 记账凭证id生成语句
     $self->_jzpz_id();
@@ -151,11 +148,11 @@ sub _yspz_update {
     my ($self, $name) = @_;
 
     # 准备yspz更新的sth
-    my $sql = qq/update $name set pstat = ? where id = ?/;
+    my $sql = qq/update yspz_$name set pstat = ? where id = ?/;
     $self->{yspz}->{$name} = $self->{dbh}->prepare($sql) or return;
 
     no strict 'refs';
-    *{ __PACKAGE__ . "::$name" } = sub {
+    *{ __PACKAGE__ . "::yspz_$name" } = sub {
         my ($self, $id, $pstat) = @_;
         $self->{yspz}->{$name}->execute($pstat, $id);
         return $self;

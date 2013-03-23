@@ -33,9 +33,9 @@ sub {
         module => 'ZAPP::Service',
         para   => {
             dbh        => $dbh, 
-            stomp      => $stomp, 
             serializer => $cfg->{serializer}, 
-            service    => $cfg->{service}->{svc},
+            stomp      => $stomp, 
+            svc        => $cfg->{svc},
         },
     ) or confess "can not ZAPP::Service->new";
 
@@ -45,8 +45,6 @@ sub {
 };
 
 __END__
-
-
 
 
 
