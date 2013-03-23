@@ -30,7 +30,7 @@ create table book_cfee_dqhf (
 
 
 drop sequence seq_cfee_dqhf;
-create sequence seq_cfee_dqhf as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_cfee_dqhf as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --

@@ -28,7 +28,7 @@ create table book_bfj_cust (
 
 
 drop sequence seq_bfj_cust;
-create sequence seq_bfj_cust as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_bfj_cust as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --

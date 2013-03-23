@@ -29,7 +29,7 @@ create table book_bsc_zyzj (
 
 
 drop sequence seq_bsc_zyzj;
-create sequence seq_bsc_zyzj as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_bsc_zyzj as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --

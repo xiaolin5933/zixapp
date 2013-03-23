@@ -30,7 +30,7 @@ create table book_bfee_yhyf (
 
 
 drop sequence seq_bfee_yhyf;
-create sequence seq_bfee_yhyf as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_bfee_yhyf as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --

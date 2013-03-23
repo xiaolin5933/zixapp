@@ -27,6 +27,7 @@ comment on column dim_dict_product.des           is '产品描述';
 
 -- data
 
-insert into dim_dict_product(id, p_num, name, des) values(1, '1', '直联银联POS收单', '直联银联POS收单');
-insert into dim_dict_product(id, p_num, name, des) values(2, '2', '结算', '结算');
+insert into dim_dict_product(id, p_num, name, des) values
+    (1, '1', '直联银联POS收单', '直联银联POS收单'),
+    (2, '2', '结算',            '结算'           );
 

@@ -29,7 +29,7 @@ create table book_income_cfee (
 
 
 drop sequence seq_income_cfee;
-create sequence seq_income_cfee as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_income_cfee as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
@@ -37,12 +37,12 @@ create sequence seq_income_cfee as bigint start with 1 increment by 1 minvalue 1
 --
 
 
-comment on table  book_income_cfee is '收入 - 客户手续费收入';
-comment on column book_income_cfee.id         is '主键';
+comment on table  book_income_cfee         is '收入 - 客户手续费收入';
+comment on column book_income_cfee.id      is '主键';
 comment on column book_income_cfee.c       is '客户编号';
 comment on column book_income_cfee.p       is '产品类型';
-comment on column book_income_cfee.period     is '会计期间';
-comment on column book_income_cfee.j      is '借方发生额';
+comment on column book_income_cfee.period  is '会计期间';
+comment on column book_income_cfee.j       is '借方发生额';
 
 
 

@@ -30,14 +30,14 @@ create table book_bamt_yhys (
 
 
 drop sequence seq_bamt_yhys;
-create sequence seq_bamt_yhys as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_bamt_yhys as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
 -- 应收银行 - 已核应收银行款
 --
 
-comment on table  book_bamt_yhys is '应收银行 - 已核应收银行款';
+comment on table  book_bamt_yhys              is '应收银行 - 已核应收银行款';
 comment on column book_bamt_yhys.id           is '主键';
 comment on column book_bamt_yhys.yp_acct      is '银行账户号及相应开户行';
 comment on column book_bamt_yhys.zjbd_type    is '资金变动类型';

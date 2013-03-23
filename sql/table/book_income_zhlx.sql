@@ -28,7 +28,7 @@ create table book_income_zhlx (
 
 
 drop sequence seq_income_zhlx;
-create sequence seq_income_zhlx as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_income_zhlx as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
@@ -36,12 +36,10 @@ create sequence seq_income_zhlx as bigint start with 1 increment by 1 minvalue 1
 --
 
 
-comment on table  book_income_zhlx is '财务费用 - 账户利息收入';
-
+comment on table  book_income_zhlx         is '财务费用 - 账户利息收入';
 comment on column book_income_zhlx.yp_acct is '银行账户号及相应开户行';
-comment on column book_income_zhlx.period     is '会计期间';
-
-comment on column book_income_zhlx.j      is '借方发生额';
+comment on column book_income_zhlx.period  is '会计期间';
+comment on column book_income_zhlx.j       is '借方发生额';
 
 
 

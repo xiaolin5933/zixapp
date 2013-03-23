@@ -20,6 +20,7 @@ alias cdc='cd $ZIXAPP_HOME/conf';
 alias cde='cd $ZIXAPP_HOME/etc';
 alias cdt='cd $ZIXAPP_HOME/t';
 alias cdh='cd $ZIXAPP_HOME';
+alias cdtb='cd $ZIXAPP_HOME/sql/table';
 
 
 

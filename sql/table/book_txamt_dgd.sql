@@ -30,7 +30,7 @@ create table book_txamt_dgd (
 
 
 drop sequence seq_txamt_dgd;
-create sequence seq_txamt_dgd as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_txamt_dgd as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
@@ -38,12 +38,12 @@ create sequence seq_txamt_dgd as bigint start with 1 increment by 1 minvalue 1 n
 --
 
 
-comment on table  book_txamt_dgd is '应收银行 - 待勾兑应收交易款';
-comment on column book_txamt_dgd.id            is '主键';
-comment on column book_txamt_dgd.yp_acct    is '银行账户号及相应开户行';
-comment on column book_txamt_dgd.bi         is '银行接口编号';
-comment on column book_txamt_dgd.tx_date       is '交易日期';
-comment on column book_txamt_dgd.period     is '会计期间';
+comment on table  book_txamt_dgd           is '应收银行 - 待勾兑应收交易款';
+comment on column book_txamt_dgd.id        is '主键';
+comment on column book_txamt_dgd.yp_acct   is '银行账户号及相应开户行';
+comment on column book_txamt_dgd.bi        is '银行接口编号';
+comment on column book_txamt_dgd.tx_date   is '交易日期';
+comment on column book_txamt_dgd.period    is '会计期间';
 comment on column book_txamt_dgd.j         is '借方发生额';
 
 

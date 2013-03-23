@@ -29,7 +29,7 @@ create table book_blc_zyzj (
 
 
 drop sequence seq_blc_zyzj;
-create sequence seq_blc_zyzj as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_blc_zyzj as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
@@ -37,12 +37,12 @@ create sequence seq_blc_zyzj as bigint start with 1 increment by 1 minvalue 1 no
 --
 
 
-comment on table  book_blc_zyzj is '应付账款 - 银行 - 银行长款';
-comment on column book_blc_zyzj.id         is '主键';
+comment on table  book_blc_zyzj         is '应付账款 - 银行 - 银行长款';
+comment on column book_blc_zyzj.id      is '主键';
 comment on column book_blc_zyzj.yp_acct is '银行账户号及相应开户行';
-comment on column book_blc_zyzj.e_date is '差错日期';
-comment on column book_blc_zyzj.period     is '会计期间';
-comment on column book_blc_zyzj.j      is '借方发生额';
+comment on column book_blc_zyzj.e_date  is '差错日期';
+comment on column book_blc_zyzj.period  is '会计期间';
+comment on column book_blc_zyzj.j       is '借方发生额';
 
 
 

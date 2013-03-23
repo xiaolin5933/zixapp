@@ -28,7 +28,7 @@ create table book_wlzj_ysbf (
 
 
 drop sequence seq_wlzj_ysbf;
-create sequence seq_wlzj_ysbf as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_wlzj_ysbf as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
@@ -36,11 +36,11 @@ create sequence seq_wlzj_ysbf as bigint start with 1 increment by 1 minvalue 1 n
 --
 
 
-comment on table  book_wlzj_ysbf is '往来 - 应收备付';
-comment on column book_wlzj_ysbf.id                 is '主键';
-comment on column book_wlzj_ysbf.wlzj_type       is '类型';
-comment on column book_wlzj_ysbf.period     is '会计期间';
-comment on column book_wlzj_ysbf.j              is '借方发生额';
+comment on table  book_wlzj_ysbf           is '往来 - 应收备付';
+comment on column book_wlzj_ysbf.id        is '主键';
+comment on column book_wlzj_ysbf.wlzj_type is '类型';
+comment on column book_wlzj_ysbf.period    is '会计期间';
+comment on column book_wlzj_ysbf.j         is '借方发生额';
 
 
 

@@ -29,7 +29,7 @@ create table book_txamt_dqr (
 
 
 drop sequence seq_txamt_dqr;
-create sequence seq_txamt_dqr as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_txamt_dqr as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
@@ -37,12 +37,12 @@ create sequence seq_txamt_dqr as bigint start with 1 increment by 1 minvalue 1 n
 --
 
 
-comment on table  book_txamt_dqr is '其他应付款 - 待确认交易款';
-comment on column book_txamt_dqr.id        is '主键';
-comment on column book_txamt_dqr.c      is '客户编号';
-comment on column book_txamt_dqr.tx_date   is '交易日期';
-comment on column book_txamt_dqr.period     is '会计期间';
-comment on column book_txamt_dqr.j is '借方发生额';
+comment on table  book_txamt_dqr          is '其他应付款 - 待确认交易款';
+comment on column book_txamt_dqr.id       is '主键';
+comment on column book_txamt_dqr.c        is '客户编号';
+comment on column book_txamt_dqr.tx_date  is '交易日期';
+comment on column book_txamt_dqr.period   is '会计期间';
+comment on column book_txamt_dqr.j        is '借方发生额';
 
 
 

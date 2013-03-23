@@ -24,9 +24,10 @@ comment on column  dim_dict_zjbd_type.name          is '资金变动类型名';
 
 
 -- default data
-insert into dim_dict_zjbd_type(id, name) values(1, '银行接口编号');
-insert into dim_dict_zjbd_type(id, name) values(2, '账户利息');
-insert into dim_dict_zjbd_type(id, name) values(3, '账户管理费');
-insert into dim_dict_zjbd_type(id, name) values(4, '资金调拨');
+insert into dim_dict_zjbd_type(id, name) values
+       (1, '银行接口编号'),
+       (2, '账户利息'),
+       (3, '账户管理费'),
+       (4, '资金调拨');
 
 

@@ -27,21 +27,16 @@ create table book_wlzj_yszy (
 
 
 drop sequence seq_wlzj_yszy;
-create sequence seq_wlzj_yszy as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_wlzj_yszy as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
 -- 往来 - 应收自有 
 --
-
-
-comment on table  book_wlzj_yszy is '往来 - 应收自有';
-comment on column book_wlzj_yszy.id         is '主键';
-comment on column book_wlzj_yszy.period     is '会计期间';
+comment on table  book_wlzj_yszy        is '往来 - 应收自有';
+comment on column book_wlzj_yszy.id     is '主键';
+comment on column book_wlzj_yszy.period is '会计期间';
 comment on column book_wlzj_yszy.j      is '借方发生额';
-
-
-
 
 -- MQT
 create table sum_wlzj_yszy as (

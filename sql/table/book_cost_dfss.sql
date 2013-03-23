@@ -29,7 +29,7 @@ create table book_cost_dfss (
 
 
 drop sequence seq_cost_dfss;
-create sequence seq_cost_dfss as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_cost_dfss as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
@@ -37,12 +37,12 @@ create sequence seq_cost_dfss as bigint start with 1 increment by 1 minvalue 1 n
 --
 
 
-comment on table  book_cost_dfss is '成本 - 垫付损失';
-comment on column book_cost_dfss.id         is '主键';
+comment on table  book_cost_dfss         is '成本 - 垫付损失';
+comment on column book_cost_dfss.id      is '主键';
 comment on column book_cost_dfss.c       is '客户编号';
 comment on column book_cost_dfss.p       is '产品类型';
-comment on column book_cost_dfss.period     is '会计期间';
-comment on column book_cost_dfss.j      is '借方发生额';
+comment on column book_cost_dfss.period  is '会计期间';
+comment on column book_cost_dfss.j       is '借方发生额';
 
 
 
@@ -50,7 +50,7 @@ comment on column book_cost_dfss.j      is '借方发生额';
 create table sum_cost_dfss as (
     select c        as c,
 	   p        as p,
-	   period     as period,
+	   period   as period,
 	   sum(j)   as j,
 	   sum(d)   as d,
 	   count(*) as cnt

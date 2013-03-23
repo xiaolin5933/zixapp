@@ -28,7 +28,7 @@ create table book_deposit_zyzj (
 
 
 drop sequence seq_deposit_zyzj;
-create sequence seq_deposit_zyzj as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle no cache order;
+create sequence seq_deposit_zyzj as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
 
 --
@@ -36,13 +36,11 @@ create sequence seq_deposit_zyzj as bigint start with 1 increment by 1 minvalue 
 --
 
 
-comment on table  book_deposit_zyzj is '银行存款 - 自有资金存款';
-
-comment on column book_deposit_zyzj.id            is '主键';
-comment on column book_deposit_zyzj.yp_acct    is '银行账户号及相应开户行';
-comment on column book_deposit_zyzj.period     is '会计期间';
-
-comment on column book_deposit_zyzj.j         is '借方发生额';
+comment on table  book_deposit_zyzj          is '银行存款 - 自有资金存款';
+comment on column book_deposit_zyzj.id       is '主键';
+comment on column book_deposit_zyzj.yp_acct  is '银行账户号及相应开户行';
+comment on column book_deposit_zyzj.period   is '会计期间';
+comment on column book_deposit_zyzj.j        is '借方发生额';
 
 
 
