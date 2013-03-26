@@ -33,3 +33,5 @@ insert into dict_dim(dim, name, memo) values
 ( 'zjbd_type',  '资金变动类型',           '资金变动类型'          ),
 ( 'zyzj_acct',  '银行账户号及相应开户行', '银行账户号及相应开户行'),
 ( 'cust_proto', '客户协议编号',           '客户协议编号');
+
+
