@@ -6,7 +6,6 @@ use Net::Stomp;
 use DBI;
 use Carp;
 use POE;
-use ZAPP::PROC;
 use ZAPP::Service;
 
 sub {
@@ -31,12 +30,14 @@ sub {
         ip     => $cfg->{service}->{ip},
         port   => $cfg->{service}->{port},
         module => 'ZAPP::Service',
-        para   => {
-            dbh        => $dbh, 
-            serializer => $cfg->{serializer}, 
-            stomp      => $stomp, 
-            svc        => $cfg->{svc},
-        },
+        para   => [
+            $dbh, 
+            {
+                serializer => $cfg->{serializer}, 
+                stomp      => $stomp, 
+                svc        => $cfg->{svc},
+            }
+        ],
     ) or confess "can not ZAPP::Service->new";
 
     # 运行

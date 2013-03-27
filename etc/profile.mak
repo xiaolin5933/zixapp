@@ -1,6 +1,7 @@
 export ZETA_HOME=~/workspace/zeta
+export ZARK_HOME=~/workspace/zark
 export ZIXAPP_HOME=~/workspace/zixapp
-export PERL5LIB=$ZETA_HOME/lib:$ZIXAPP_HOME/lib
+export PERL5LIB=$ZETA_HOME/lib:$ZARK_HOME/lib:$ZIXAPP_HOME/lib
 export PLUGIN_PATH=$ZIXAPP_HOME/plugin
 export PATH=$ZIXAPP_HOME/bin:$ZIXAPP_HOME/sbin:$ZETA_HOME/bin:$PATH
 export ZAPP_DEBUG=1;

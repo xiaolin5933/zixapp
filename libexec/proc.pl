@@ -5,7 +5,7 @@ use Zeta::Run;
 use Net::Stomp;
 use DBI;
 use Carp;
-use ZAPP::PROC;
+use Zark::Proc;
 
 sub {
 
@@ -16,12 +16,12 @@ sub {
     my $dbh = zkernel->zapp_dbh();
 
     # 构建proc对象
-    my $proc = ZAPP::PROC->new(
-        dbh  => $dbh, 
+    my $proc = Zark::Proc->new(
+        $dbh, 
         proc => $cfg->{proc} 
-    ) or confess "can not ZAPP::PROC->new";
+    ) or confess "can not Zark::Proc->new";
 
-    warn "ZAPP:PROC:\n"  . Data::Dump->dump($proc) if $ENV{ZAPP_DEBUG};
+    warn "Zark::Proc:\n"  . Data::Dump->dump($proc) if $ENV{ZAPP_DEBUG};
 
     # 构建stomp客户端
     my $stomp = Net::Stomp->new( 

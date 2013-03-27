@@ -1,18 +1,19 @@
 package ZAPP::Service;
 use strict;
 use warnings;
+use base qw/Zark/;
 
 #
+# $dbh,    
 # {
 #   stomp       => $args->{stomp},
-#   dbh         => $args->{dbh},
 #   serrializer => $args->{serializer},
 #   svc         => { xxx => sub { ... }, }
 # }
 #
-sub new {
-    my ($class, $args)  = @_;
-    bless $args, $class;
+sub _init {
+    my ($self, $args)  = @_;
+    bless $args, $self;
 }
 
 sub handle {
