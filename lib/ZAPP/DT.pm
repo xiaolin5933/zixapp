@@ -122,6 +122,25 @@ sub next_n_wday {
         return $dt->subtract(DateTime::Duration->new(days => $dur) )->ymd('-');
     }
 }
+
+#
+#  下n个工作日dt版本
+#
+sub next_n_wday_dt {
+}
+
+#
+#  下n个自然日
+#
+sub next_n_day {
+}
+
+#
+#  下n个自然日dt版本
+#
+sub next_n_day_dt {
+}
+
   
 
 #
@@ -141,17 +160,37 @@ sub is_wday {
 }
 
 #
+# 是否为工作dt版
+#
+sub is_wday_dt {
+    my ($self, $dt) = @_;
+    my $year = $dt->year();
+    my $day = $dt->day_of_year();
+    unless($self->{$year}) {
+        confess "ERROR: 无法计算, 只有[" . join(',', sort keys @{$self}) . "], 需要[$year]";
+    }
+    return 1 unless $self->{$year}->{holiday}[$day];
+}
+
+#
 # 周最后一天
 #
 sub week_last {
     my ($self, $date) = @_;
     $date =~ /(\d{4})-(\d{2})-(\d{2})/;
-    my $year = $1;
     my $dt = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
-    my $day = $dt->day_of_week();
-    $dt->add(DateTime::Duration->new( days => 7 - $day));
+    $dt->add(DateTime::Duration->new( days => 7 - $dt->day_of_week));
     return $dt->ymd('-');
 }
+
+#
+# 周最后一天dt版本
+#
+sub week_last_dt {
+    my ($self, $dt) = @_;
+    return $dt->add(DateTime::Duration->new( days => 7 - $dt->day_of_week));
+}
+
 
 #
 # 月最后一天
@@ -160,6 +199,14 @@ sub month_last {
     my ($self, $date) = @_;
     $date =~ /(\d{4})-(\d{2})-(\d{2})/;
     return DateTime->last_day_of_month(time_zone => 'local', year => $1, month => $2)->ymd('-');
+}
+
+#
+# 月最后一天dt版
+#
+sub month_last_dt {
+    my ($self, $dt) = @_;
+    return DateTime->last_day_of_month(time_zone => 'local', year => $1, month => $dt->month());
 }
 
 #
@@ -173,6 +220,15 @@ sub quarter_last {
     my $month =  $dt->quarter * 3;
     return DateTime->last_day_of_month( time_zone => 'local', year => $year, month => $month)->ymd('-');
 }
+
+#
+# 季度最后一天dt版
+#
+sub quarter_last_dt {
+    my ($self, $dt) = @_;
+    return DateTime->last_day_of_month( time_zone => 'local', year => $dt->year, month => $dt->quarter * 3);
+}
+ 
  
 
 #
@@ -190,12 +246,33 @@ sub semi_year_last {
 }
 
 #
+# 半年最后一天dt版
+#
+sub semi_year_last_dt {
+    my ($self, $dt) = @_;
+    if ($dt->month() > 6) {
+        return $dt->set_month(12)->set_day(31);
+    }
+    else {
+        return $dt->set_month(6)->set_day(30);
+    }
+}
+
+#
 # 年最后一天
 #
 sub year_last {
     my ($self, $date) = @_;
     $date =~ /^(\d{4})-/;
     return "$1-12-31";
+}
+
+#
+# 年最后一天dt版
+#
+sub year_last_dt {
+    my ($self, $dt) = @_;
+    return $dt->set_month(12)->set_day(31);
 }
 
 1;

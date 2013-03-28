@@ -69,12 +69,16 @@ use constant {
 # 参数:
 # (
 #     dbh   => $dbh,
-#     proto => $proto
+#     bi    => $bi,
+#     proto => $proto,
+#     dt    => $dt,
 # )
 #
 # 对象结构
 # {
+#    dbh   => $dbh,
 #    bi    => 
+#    dt    =>
 #    proto => [
 #        # 第一份协议
 #        {
@@ -136,8 +140,8 @@ use constant {
 #        {
 #        },
 #    ],
-#    cache => [ '2013-04-24', '2013-0425' ],
-#    work  => {
+#    lru => [ '2013-04-24', '2013-0425' ],
+#    cache  => {
 #        '2013-04-24' => $proto[$i],
 #        '2013-04-25' => $proto[$i],
 #    },
@@ -171,10 +175,10 @@ sub calc {
     my ($self, $req) = @_;
 
     # 查找协议
-    my $proto = $self->{work}->{$req->{date}};
+    my $proto = $self->{cache}->{$req->{date}};
     unless($proto) {
         # cache中协议不存在, LRU清理cache
-        delete $self->{work}->{shift @{$self->{cache}}} if @{$self->{cache}} > CACHE_SIZE;
+        delete $self->{cache}->{shift @{$self->{lru}}} if @{$self->{lru}} > CACHE_SIZE;
 
         # 查找协议
         $proto = $self->_find_proto($req->{date});
@@ -184,8 +188,8 @@ sub calc {
         }        
  
         # 找到协议, 放入cache
-        push @{$self->{cache}}, $req->{date};
-        $self->{work}->{$req->{date}} = $proto; 
+        push @{$self->{lru}}, $req->{date};
+        $self->{cache}->{$req->{date}} = $proto; 
     }
 
     # 返回值
@@ -202,7 +206,7 @@ sub calc {
         # 组织本规则处理结果:
         my $res = {
              bfj_acct_bj  => $proto->{bjhf_acct},
-             bj_in        => $self->inout_date($proto->{bjhf_date});
+             bj_in        => $self->inout_date($proto->{bjhf_date}),
              bi           => $self->{bi},
         }; 
 
@@ -247,24 +251,24 @@ sub calc {
 
         # 银行手续费划付信息
         my $hf = $rule->{hf};
-        if ( $fh->{type} == FH_TYPE_F) {     # 财务付款
+        if ( $hf->{type} == FH_TYPE_F) {     # 财务付款
              $res->{bfee_cwwf} = $bfee;
         }
-        elsif ($fh->{type} == FH_TYPE_NF) {  # 非财务付款
+        elsif ($hf->{type} == FH_TYPE_NF) {  # 非财务付款
             # 判断手续费划付账户类型: 自有资金 or 备付金
-            if ( $fh->{acct}  ) {  # 手续费划付账号为备付金账号
+            if ( $hf->{acct}  ) {  # 手续费划付账号为备付金账号
 
                 # 备付金划付银行账号 == 手续费划付账号 
                 # 为备付金内扣
-                if ( $proto->{bjhf_acct} == $fh->{acct} ) {
+                if ( $proto->{bjhf_acct} == $hf->{acct} ) {
                     $res->{bfee_nk}      = $bfee;
-                    $res->{bfee_nk_acct} = $fh->{acct};
+                    $res->{bfee_nk_acct} = $hf->{acct};
                     $res->{bfee_nk_out}  = $self->inout_date();
                 }
                 # 备付金外扣
                 else {
                     $res->{bfee_wk}      = $bfee;
-                    $res->{bfee_wk_acct} = $fh->{acct};
+                    $res->{bfee_wk_acct} = $hf->{acct};
                     $res->{bfee_wk_out}  = $self->inout_date();
                 }
             }  
@@ -293,35 +297,36 @@ sub calc {
 #      delay   => '划付延迟',
 #      nwd     => '非工作日是否划付',
 #   },
+#   $date,
 # 输出:
 ####################################################
 sub inout_date {
-    my ($self, $fh);
+    my ($self, $hf, $date) = @_;
 
-    my $date;
+    my $dt;
 
     # 日
     if ($hf->{period} == FH_PERIOD_DAY) {
-        $date = $stlmnt_date;
+        $dt = $date;
     }
     # 周
     elsif ($hf->{period} == FH_PERIOD_WEEK) {
-        $date = $xxx   # $stlmnt_date所在周的最后一天
+        $dt = $self->{dt}->week_last($dt)   # $stlmnt_dt所在周的最后一天
     }
     # 月
     elsif ($hf->{period} == FH_PERIOD_MONTH) {
-        $date = $xxx  # $stlmnt_date所在月的最后一天
+        $dt = $self->{dt}->month_last($dt)  # $stlmnt_dt所在月的最后一天
     }
     elsif ($hf->{period} == FH_PERIOD_QUARTER) {
-        $date = $xxx  # $stlmnt_date所在月的最后一天
+        $dt = $self->{dt}->quarter_last($dt)  # $stlmnt_dt所在月的最后一天
     }
     # 半年
     elsif ($hf->{period} == FH_PERIOD_SEMI_YEAR) {
-        $date = $xxx  # $stlmnt_date所在月的最后一天
+        $dt = $self->{dt}->semi_year_last($dt)  # $stlmnt_dt所在月的最后一天
     }
     # 年
     elsif ($hf->{period} == FH_PERIOD_YEAR) {
-        $date = $xxx  # $stlmnt_date所在月的最后一天
+        $dt = $self->{dt}->year_last($dt)  # $stlmnt_dt所在月的最后一天
     }
     else {
         warn "ERROR: internal error";
@@ -329,21 +334,17 @@ sub inout_date {
     }
 
     #  加上划付延迟
-    $date += $hf->{delay};
+    $dt = $self->{dt}->next_n_day($dt, $hf->{delay});
 
-    #  是否为工作日
-    if ( $date ) {  # 
-    }
-    else {
+    #  不是工作日
+    unless( $self->{dt}->is_wday($dt) ) {  # 
         # 非工作日是否划付
-        if ( $hf->{nwd} )  {    # 是, 非工作日划付, 
-        }
-        else {
-            $date = $xxx;  # 否, 非工作日不划付, 取$date的下一工作日
+        unless ( $hf->{nwd} )  {    # 非工作日 不划付, 取下一工作日
+            $dt = $self->{dt}->next_n_wday($dt, 1);  
         }
     }
 
-    return $date; 
+    return $dt; 
 }
 
 #

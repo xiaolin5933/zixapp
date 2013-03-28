@@ -83,4 +83,6 @@ warn "semi_year last for[2013-07-12] is " .  $zdt->semi_year_last('2013-07-12'),
 warn "--------------------\n";
 warn "year last for[2013-04-10] is " .  $zdt->year_last('2013-04-10'), "\n";
 warn "year last for[2013-04-11] is " .  $zdt->year_last('2013-04-11'), "\n";
+my $dt = DateTime->new( time_zone => 'local', year => '2013', month => 4, day => 11);
+warn "year last for[2013-04-11] is " .  $zdt->year_last_dt($dt)->ymd('-'), "\n";
 

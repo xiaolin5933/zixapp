@@ -1,6 +1,7 @@
 package ZAPP::BIP::Config;
 use strict;
 use warnings;
+use ZAPP::DT;
 # use ZAPP::BIP::BI;
 use constant {
     DEBUG => $ENV{ZAPP_ALGO_CONFIG_DEBUG} || 0,
@@ -15,7 +16,10 @@ use constant {
 #
 #  对象结构:
 #  {
-#     dbh  =>  $dbh
+#     dbh     =>  $dbh
+#     bip     =>  $bip
+#     dept_bi => $dept_bi
+#     dt      => $dt,
 #  }
 #
 sub new {
@@ -39,7 +43,9 @@ sub bip {
     my $bip  = $self->{bip}->{$bi};
 #    return ZAPP::BIP::BI->new( 
 #        dbh   => $self->{dbh},
+#        bi    => $bi,
 #        proto => $bip,
+#        dt    => $self->{dt},
 #    );
 }
 
@@ -119,6 +125,7 @@ sub _init {
     my $algo  = $self->_load_algo();
     my $hf    = $self->_load_hf();
     my $dept_bi = $self->_load_dept_bi();
+    my $dt      = ZAPP::DT->new( dbh => $args->{dbh} );
 
     my %data;
     for my $bi_id (keys %$bip) {
@@ -137,6 +144,7 @@ sub _init {
 
     $self->{bip}     = \%data;
     $self->{dept_bi} = $dept_bi;
+    $self->{dt}      = $dt;;
 
     return $self;
 }
