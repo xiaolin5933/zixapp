@@ -1,0 +1,121 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use DBI;
+use Getopt::Long;
+use DateTime;
+use DateTime::Duration;
+use Carp;
+use Zeta::IniParse qw/ini_parse/;
+use Zeta::Log;
+
+my $year;
+my $rtn = GetOptions(
+    'y|year=i'  => \$year,
+);
+unless($rtn && defined $year) {
+  die "usage: ./holi_add -y|--year  2012";
+}
+
+my $holi_file = "$ENV{ZIXAPP_HOME}/conf/holi.d/$year.ini";
+unless( -f $holi_file) {
+  die "$holi_file does not exist";
+}
+my $holi = ini_parse($holi_file);
+
+my $logger = Zeta::Log->new(
+    logurl   =>  "file://$ENV{ZIXAPP_HOME}/log/holi.log",
+    loglevel => 'INFO',
+);
+
+my $dbh = DBI->connect(
+    "dbi:DB2:$ENV{DB_NAME}",
+    $ENV{DB_USER},
+    $ENV{DB_PASS},
+    {
+    },
+);
+
+#
+# create table dict_holi (
+#     year     integer  not null,
+#     days     integer  not null,
+#     holiday  varchar(2048) not null
+# ) in tbs_dat index in tbs_idx;
+#
+# comment on table  dict_holi     is  '节假日信息表'
+# comment on column dict_holi.dt  is  '节假日'
+#
+my $insert = $dbh->prepare(<<EOF);
+insert into dict_holi(year, days, holiday) values(?,?,?)
+EOF
+
+###########################################
+#  基本假日 周六周日
+###########################################
+my $dt = DateTime->new(
+    year   => $year,
+    month  => 1,
+    day    => 1,
+    hour   => 0,
+    minute => 0,
+    second => 1,
+    time_zone => 'local',
+);
+my $dur = DateTime::Duration->new(days => 1);
+my $days = $dt->is_leap_year ? 366 : 365;
+
+my %holiday;
+my $cnt = $days;
+while($cnt) {
+    my $day = $dt->ymd('-');
+    my $flag = 0; 
+    if ($dt->day_of_week == 6 || $dt->day_of_week == 7) {
+        $holiday{$day} = 1;
+    } 
+    $dt->add($dur);
+    --$cnt;
+}
+
+###########################################
+# 更新国家假日表 
+###########################################
+for my $h (keys %$holi) {
+    warn "begin process holiday $h...\n";
+
+    $holi->{$h}->{begin} =~ /(\d{4})(\d{2})(\d{2})/;
+    my $beg = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
+    my $d1 = $beg->day_of_year();
+
+    $holi->{$h}->{end} =~ /(\d{4})(\d{2})(\d{2})/;
+    my $d2 = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3)->add($dur)->day_of_year();
+    my $all =  $d2 - $d1;
+
+    while ($all > 0) {
+        $holiday{$beg->ymd('-')} = 1;
+        $all--;
+        $beg->add($dur);
+    }
+
+    my $adj = $holi->{$h}->{adjust};
+    for (split ',', $adj) {
+        s/(\d{4})(\d{2})(\d{2})/$1-$2-$3/;
+        delete $holiday{$_};
+    }
+}
+
+my @holiday;
+for (sort keys %holiday) {
+    /(\d{4})-(\d{2})-(\d{2})/;
+    my $dt = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
+    push @holiday, $dt->day_of_year();
+}
+my $holi_str = join ',', @holiday;
+warn "holi_str[$holi_str]";
+$insert->execute($year, $days, $holi_str);
+$insert->finish();
+$dbh->commit;
+$dbh->disconnect();
+
+
