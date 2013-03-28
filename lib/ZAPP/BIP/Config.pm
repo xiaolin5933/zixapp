@@ -173,13 +173,13 @@ select
 
     round
 from
-    bi_proto
+    bip
 order by 
     bi_id, 
     begin asc
 EOF
 
-    warn "bi_proto info" and Data::Dump->dump($all) if DEBUG;
+    warn "bip info" and Data::Dump->dump($all) if DEBUG;
 
     my %proto;
     for (@$all) {

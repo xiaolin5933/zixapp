@@ -1,5 +1,6 @@
 *.log
 *.pid
 *.swp
+/tmp
 profile.cain
 zixapp.komodoproject
