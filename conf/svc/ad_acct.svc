@@ -7,78 +7,82 @@
 #     serializer => $ser,
 #     service    => $svc, 
 # }
+#-----------------------------------------
+# req:
+#
+# res:
 #
 sub {
-   	my ($svc, $req) = @_;
+    my ($svc, $req) = @_;
 
-	my $dbh 		= $svc->{dbh};
-	my $stomp		= $svc->{stomp};
-	my $cfg			= $svc->{cfg};
-	
-	my $serializer	= $cfg->{serializer};
-	my $stpcfg      = $cfg->{stomp};
-	
-	my %ret = {
-		status => 0,
-		errmsg => '',
-		ret    => ''
-	};
-    # 客户端请求过来的消息
-	my $data         = $req->{data};                       	# 会计分录
-	my $sys     	 = $req->{sys};
-	# 组织特种调账单
-	my %src;
-	my $src->{_type} = '0000';
-	$src->{data}     = $data;
-	$src->{sys}      = $sys;
-	my $body = $serializer->serialize($src);
-	my $sendsta = $stomp->send(
-             { destination => $stpcfg->{queue}->{proc}, body => $body } );
-	
-	# 如果没有发送出去
-	if ($sendsta != 1) {
-		$ret->{status} = -1;
-	}
-	
-
-##	# 字典
-##	my $books	 = $service->{meta}->{book};				# 账薄字典
-##	my $yspzs    = $service->{meta}->{yspz};				# 原始凭证字典
-##	# 辅助变量
-##	my $count = 0;
-##	my $sth;
-##	my $ys_id;
-##	
-##
-##	for my $idx (keys $data) {
-##    	my $jd = $data->{$idx};
-##
-##    	# 借 账本数据
-##    	my $j      = $jd->{j_book};
-##    	my $d      = $jd->{d_book};
-##    	my $j_book = $j->{_type};
-##    	my $d_book = $d->{_type};
-##	
-##		my $j_tbl  = "book_" . $books->{$j_book}->{value};
-##	    my $d_tbl  = "book_" . $books->{$d_book}->{value};
-##		
-##		if ($count == 0) {
-##			# 组织0000原始凭证 
-##      		my $source = {
-##        		_type         => '0000',
-##
-##				STATUS		  => '0',		
-##        		CAUSE         => $cause,
-##
-##        		FLAG          => 0                 # 撤销状态，默认为未撤销
-##      		};
-##			## 原始凭证
-##			$ys_id = $service->add_yspz_0000($source);
-##		}
-##
-##	}	
-	
+    my $dbh   = $svc->{dbh};
+    my $stomp = $svc->{stomp};
+    my $cfg   = $svc->{cfg};
     
-   	return \%ret;
+    my $serializer  = $cfg->{serializer};
+    my $stpcfg      = $cfg->{stomp};
+    
+    my %ret = {
+        status => 0,
+        errmsg => '',
+        ret    => ''
+    };
+    # 客户端请求过来的消息
+    my $data         = $req->{data};                           # 会计分录
+    my $sys          = $req->{sys};
+    # 组织特种调账单
+    my %src;
+    my $src->{_type} = '0000';
+    $src->{data}     = $data;
+    $src->{sys}      = $sys;
+    my $body = $serializer->serialize($src);
+    my $sendsta = $stomp->send(
+             { destination => $stpcfg->{queue}->{proc}, body => $body } );
+    
+    # 如果没有发送出去
+    if ($sendsta != 1) {
+        $ret->{status} = -1;
+    }
+    
+
+##    # 字典
+##    my $books     = $service->{meta}->{book};                # 账薄字典
+##    my $yspzs    = $service->{meta}->{yspz};                # 原始凭证字典
+##    # 辅助变量
+##    my $count = 0;
+##    my $sth;
+##    my $ys_id;
+##    
+##
+##    for my $idx (keys $data) {
+##        my $jd = $data->{$idx};
+##
+##        # 借 账本数据
+##        my $j      = $jd->{j_book};
+##        my $d      = $jd->{d_book};
+##        my $j_book = $j->{_type};
+##        my $d_book = $d->{_type};
+##    
+##        my $j_tbl  = "book_" . $books->{$j_book}->{value};
+##        my $d_tbl  = "book_" . $books->{$d_book}->{value};
+##        
+##        if ($count == 0) {
+##            # 组织0000原始凭证 
+##              my $source = {
+##                _type         => '0000',
+##
+##                STATUS          => '0',        
+##                CAUSE         => $cause,
+##
+##                FLAG          => 0                 # 撤销状态，默认为未撤销
+##              };
+##            ## 原始凭证
+##            $ys_id = $service->add_yspz_0000($source);
+##        }
+##
+##    }    
+    
+    
+       return \%ret;
 };
 

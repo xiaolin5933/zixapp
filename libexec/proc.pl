@@ -17,10 +17,10 @@ sub {
 
     # 构建proc对象
     my $proc = Zark::Proc->new(
-		{
-        	dbh => $dbh, 
-        	proc => $cfg->{proc} 
-		}
+        {
+            dbh => $dbh, 
+            proc => $cfg->{proc} 
+        }
     ) or confess "can not Zark::Proc->new";
 
     warn "Zark::Proc:\n"  . Data::Dump->dump($proc) if $ENV{ZAPP_DEBUG};
@@ -55,17 +55,17 @@ sub {
          # 反序列化获取原始配置
          my $src = $ser->deserialize($frame->body);  
          unless($src) {
-            zlogger->error("can not deserialize src[" . $frame->body . "]");
-            $stomp->ack( { frame => $frame } );
-            next;
+             zlogger->error("can not deserialize src[" . $frame->body . "]");
+             $stomp->ack( { frame => $frame } );
+             next;
          }
          zlogger->debug("recv src:\n" . Data::Dump->dump($src)) if $ENV{ZAPP_DEBUG};
 
          # 凭证处理
          unless($proc->handle($src)) {
-            zlogger->error("can not handle src[" . $src . "]");
-            $stomp->ack( { frame => $frame } );
-            next;
+             zlogger->error("can not handle src[" . $src . "]");
+             $stomp->ack( { frame => $frame } );
+             next;
          }
 
          $stomp->ack( { frame => $frame } );

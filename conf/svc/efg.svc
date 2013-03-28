@@ -9,10 +9,10 @@
 # }
 #
 sub {
-   my ($svc, $req) = @_;
+    my ($svc, $req) = @_;
 
-   return {
-      hello => 'beijing',
-   };
+    return {
+        hello => 'beijing',
+    };
 };
 

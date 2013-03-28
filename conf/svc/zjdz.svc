@@ -7,6 +7,10 @@
 #     serializer => $ser,
 #     service    => $svc, 
 # }
+#--------------------------------
+# req:
+#
+# res:
 #
 sub {
    my ($svc, $req) = @_;

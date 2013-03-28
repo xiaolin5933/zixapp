@@ -13,10 +13,10 @@
 #  
 #
 sub {
-   my ($svc, $req) = @_;
+    my ($svc, $req) = @_;
 
-   return {
-      hello => 'world',
-   };
+    return {
+        hello => 'world',
+    };
 };
 
