@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Carp;
 use Zeta::Run;
+use DBI;
 
 #
 # 父进程加载插件
