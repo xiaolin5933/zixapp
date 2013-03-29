@@ -86,8 +86,9 @@ sub next_n_wday {
            ++$day;
            if ($day > $self->{$year}->{days}) {
                ++$year;
+               $day = DateTime->new(time_zone => 'local', year => $year, month => 1, day => 1)->day_of_year();
                unless ($self->{$year}) {
-                   confess "ERROR: 无法计算, 只有[" . join(',', sort keys @{$self}) . "], 需要[$year]";
+                   confess "ERROR: 无法计算, 只有[" . join(',', sort keys %{$self}) . "], 需要[$year]";
                }
            }
            # 如果是节假日
@@ -154,7 +155,7 @@ sub is_wday {
     my $dt = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
     my $day = $dt->day_of_year();
     unless($self->{$year}) {
-        confess "ERROR: 无法计算, 只有[" . join(',', sort keys @{$self}) . "], 需要[$year]";
+        confess "ERROR: 无法计算, 只有[" . join(',', sort keys %{$self}) . "], 需要[$year]";
     }
     return 1 unless $self->{$year}->{holiday}[$day];
 }
