@@ -126,20 +126,38 @@ sub next_n_wday {
 
 #
 #  下n个工作日dt版本
+#  $self->next_n_wday_dt($dt, $n);
 #
 sub next_n_wday_dt {
+    my ($self, $dt, $n) = @_;
 }
 
 #
 #  下n个自然日
+#  $self->next_n_day($date, $n);
 #
 sub next_n_day {
+    my ($self, $date, $n) = @_;
+    return $date if $n == 0;
+
+    $date =~ /(\d{4})-(\d{2})-(\d{2})/;
+    my $dt = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
+
+    return $n > 0 ? $dt->add(DateTime::Duration->new( days => $n))->ymd('-') :
+                    $dt->subtract(DateTime::Duration->new( days => -$n))->ymd('-');
 }
 
 #
 #  下n个自然日dt版本
+#  $self->next_n_day($dt, $n);
 #
 sub next_n_day_dt {
+    my ($self, $dt, $n) = @_;
+    return $dt if $n == 0;
+  
+    return $n > 0 ? $dt->add(DateTime::Duration->new( days => $n)) :
+                    $dt->subtract(DateTime::Duration->new( days => -$n));
+        
 }
 
   
@@ -150,7 +168,7 @@ sub next_n_day_dt {
 sub is_wday {
 
     my ($self, $date) = @_;
-    $date =~ /(\d{4})(\d{2})(\d{2})/;
+    $date =~ /(\d{4})-(\d{2})-(\d{2})/;
     my $year = $1;
     my $dt = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
     my $day = $dt->day_of_year();
@@ -158,6 +176,7 @@ sub is_wday {
         confess "ERROR: 无法计算, 只有[" . join(',', sort keys %{$self}) . "], 需要[$year]";
     }
     return 1 unless $self->{$year}->{holiday}[$day];
+    return 0;
 }
 
 #
@@ -238,12 +257,7 @@ sub quarter_last_dt {
 sub semi_year_last {
     my ($self, $date) = @_;
     $date =~ /(\d{4})-(\d{2})-(\d{2})/;
-    if ($2 > 6) {
-        return "$1-12-31"; 
-    }
-    else {
-        return "$1-06-30";
-    }
+    return $2 > 6 ? "$1-12-31" : "$1-06-30";
 }
 
 #
@@ -251,12 +265,7 @@ sub semi_year_last {
 #
 sub semi_year_last_dt {
     my ($self, $dt) = @_;
-    if ($dt->month() > 6) {
-        return $dt->set_month(12)->set_day(31);
-    }
-    else {
-        return $dt->set_month(6)->set_day(30);
-    }
+    return $dt->month() > 6 ? $dt->set_month(12)->set_day(31) : $dt->set_month(6)->set_day(30);
 }
 
 #
