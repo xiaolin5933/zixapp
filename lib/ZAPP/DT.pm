@@ -75,12 +75,22 @@ sub next_n_wday {
     return $date if $n == 0;
 
     $date =~ /(\d{4})-(\d{2})-(\d{2})/;
-    my $year = $1;
-    my $dt = DateTime->new(time_zone => 'local', year => $year, month => $2, day => $3);
-    my $day = $dt->day_of_year();
- 
-    # 下几个工作日
-    if ( $n > 0 ) {
+    my $dt = DateTime->new(time_zone => 'local', year => $1, month => $2, day => $3);
+    return $self->next_n_wday_dt($dt, $n)->ymd('-');
+}
+
+#
+#  下n个工作日dt版本
+#  $self->next_n_wday_dt($dt, $n);
+#
+sub next_n_wday_dt {
+    my ($self, $dt, $n) = @_;
+    return $dt if $n == 0 ;
+
+    my $day  = $dt->day_of_year();   # 当年的第几天
+    my $year = $dt->year();          # 哪一年
+
+    if ($n > 0 ) {
         my $dur = 0;
         while ($n > 0 ) {
            ++$day;
@@ -99,37 +109,28 @@ sub next_n_wday {
            $n--;
            ++$dur; 
         }
-        return $dt->add(DateTime::Duration->new(days => $dur))->ymd('-');
+        return $dt->add(DateTime::Duration->new(days => $dur));
     }
-    # 前几个工作日
     else {
         my $dur = 0;
-        while($n != 0 ) {
+        while($n != 0) {
             --$day;
-            if ($day < 0 ) {
+            if ( $day < 0 ) {
                 --$year;
                 $day = DateTime->new(time_zone => 'local', year => $year, month => 12, day => 31)->day_of_year();
                 unless($self->{$year}) {
                     confess "ERROR: 无法计算, 只有[" . join(',', sort keys %{$self}) . "], 需要[$year]";
                 }
             }
-            if ($self->{$year}->{holiday}[$day]) {
-                ++$dur;
-                next;
+            if ( $self->{$year}->{holiday}[$day]) {
+                 ++$dur;
+                 next; 
             }
             ++$n;
             ++$dur;
-        } 
-        return $dt->subtract(DateTime::Duration->new(days => $dur) )->ymd('-');
+        }
+        return $dt->subtract(DateTime::Duration->new(days => $dur));
     }
-}
-
-#
-#  下n个工作日dt版本
-#  $self->next_n_wday_dt($dt, $n);
-#
-sub next_n_wday_dt {
-    my ($self, $dt, $n) = @_;
 }
 
 #
@@ -157,7 +158,6 @@ sub next_n_day_dt {
   
     return $n > 0 ? $dt->add(DateTime::Duration->new( days => $n)) :
                     $dt->subtract(DateTime::Duration->new( days => -$n));
-        
 }
 
   
@@ -166,17 +166,10 @@ sub next_n_day_dt {
 # 是否为工作日
 #
 sub is_wday {
-
-    my ($self, $date) = @_;
+    my ($self, $date ) = @_;
     $date =~ /(\d{4})-(\d{2})-(\d{2})/;
     my $year = $1;
-    my $dt = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
-    my $day = $dt->day_of_year();
-    unless($self->{$year}) {
-        confess "ERROR: 无法计算, 只有[" . join(',', sort keys %{$self}) . "], 需要[$year]";
-    }
-    return 1 unless $self->{$year}->{holiday}[$day];
-    return 0;
+    return $self->is_wday_dt(DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3));
 }
 
 #
@@ -189,7 +182,8 @@ sub is_wday_dt {
     unless($self->{$year}) {
         confess "ERROR: 无法计算, 只有[" . join(',', sort keys @{$self}) . "], 需要[$year]";
     }
-    return 1 unless $self->{$year}->{holiday}[$day];
+    return $self unless $self->{$year}->{holiday}[$day];
+    return; 
 }
 
 #
