@@ -13,7 +13,6 @@ confess "can not load $ENV{ZIXAPP_HOME}/conf/zixapp.conf error[$@]" unless $cfg;
 
 helper zapp_config => sub { $cfg };
 helper zapp_dbh    => sub {
-
     # 获取配置
     my $cfg = zkernel->zapp_config();
 
@@ -40,6 +39,14 @@ helper zapp_dbh    => sub {
    
     return $dbh;
 };
+
+#helper zapp_proc    => sub {
+#	# 构建proc对象
+#    my $proc = Zark::Proc->new(
+#        $dbh,
+#        proc => $cfg->{proc}
+#    ) or confess "can not Zark::Proc->new";	
+#}
 
 
 1;

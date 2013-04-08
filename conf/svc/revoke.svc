@@ -1,0 +1,36 @@
+#!perl
+#
+# 撤销原始凭证
+#
+
+#
+# $svc对象:  {
+#     dbh        => $dbh
+#     stomp      => $stomp,
+#     serializer => $ser,
+#     service    => $svc, 
+# }
+#
+sub {
+	my ($svc, $req) = @_;
+
+	my $data = $req->{data};
+	#
+	my $period  = $data->{period};
+	my $ys_type = $data->{ys_type};
+    my $ys_id   = $data->{ys_id};
+	# 查询指定原始凭证类型与原始凭证id的记账凭证
+	my $jzpzs = $svc->jzpz_sel($period, $ys_type, $ys_id);
+    for my $jzpz (@$jzpzs)	{
+			
+	}	
+   
+   	# 
+   
+   
+
+   	return {
+      	hello => 'world',
+   	};
+};
+

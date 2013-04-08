@@ -17,8 +17,10 @@ sub {
 
     # 构建proc对象
     my $proc = Zark::Proc->new(
-        $dbh, 
-        proc => $cfg->{proc} 
+		{
+        	dbh => $dbh, 
+        	proc => $cfg->{proc} 
+		}
     ) or confess "can not Zark::Proc->new";
 
     warn "Zark::Proc:\n"  . Data::Dump->dump($proc) if $ENV{ZAPP_DEBUG};

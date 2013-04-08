@@ -17,27 +17,27 @@ sub {
     my $dbh = zkernel->zapp_dbh();
 
     # 连接stomp
-    my $stomp = Net::Stomp->new( 
+	my $stp = Net::Stomp->new( 
         {
             hostname => $cfg->{stomp}->{hostname}, 
             port     => $cfg->{stomp}->{port} ,
         }
     ) or confess "can not Net::Stomp with { hostname => $cfg->{stomp}->{hostname}, port => $cfg->{stomp}->{port} }";
-    $stomp->connect({ login => 'hello', passcode => 'there' });
+    $stp->connect({ login => 'hello', passcode => 'there' });
 
-    # 构建service的POE session
+
+	# 构建service的POE session
     Zeta::POE::HTTPD->spawn(
         ip     => $cfg->{service}->{ip},
         port   => $cfg->{service}->{port},
         module => 'ZAPP::Service',
-        para   => [
-            $dbh, 
-            {
-                serializer => $cfg->{serializer}, 
-                stomp      => $stomp, 
-                svc        => $cfg->{svc},
-            }
-        ],
+        para   => {
+
+            'dbh'        => $dbh,
+			'stomp'      => $stp,
+			'svc'		 => $cfg->{svc},
+			'cfg'		 => $cfg,
+        }
     ) or confess "can not ZAPP::Service->new";
 
     # 运行
