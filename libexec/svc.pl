@@ -25,18 +25,17 @@ sub {
     ) or confess "can not Net::Stomp with { hostname => $cfg->{stomp}->{hostname}, port => $cfg->{stomp}->{port} }";
     $stp->connect({ login => 'hello', passcode => 'there' });
 
-
     # 构建service的POE session
     Zeta::POE::HTTPD->spawn(
-        ip     => $cfg->{service}->{ip},
+        ip     => $cfg->{service}->{hostname},
         port   => $cfg->{service}->{port},
         module => 'ZAPP::Service',
-        para   => {
+        para   => [
             'dbh'      => $dbh,
             'stomp'    => $stp,
             'svc'      => $cfg->{svc},
             'cfg'      => $cfg,
-        }
+        ]
     ) or confess "can not ZAPP::Service->new";
 
     # 运行

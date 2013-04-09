@@ -8,13 +8,30 @@
 #     service    => $svc, 
 # }
 #-----------------------------------------
-# req:
+# req:  {
+#     data => {
+#         cause    => $cause,
+#         period   => $period,
+#         jd_books => {
+#             "0" => {
+#                 d_book => { _type => 2005.01, BFJ_ACCT => 1, D => 1, ZJBD_DATE => 1, ZJBD_TYPE => 1 },
+#                 j_book => { _type => 1020.03, J => 1, ZJBD_DATE => 1, ZJBD_TYPE => 1, ZYZJ_ACCT => 1 },
+#             },
+#         },
+#     },
+#     svc  => "ad_acct",
+#     sys  => { oper_user => 1 },
+# }   
 #
-# res:
+# res:  {
+#     status => 0,  # 0 成功, 其他失败
+#     errmsg => '',
+#     ret    => ''
+# }
+#
 #
 sub {
     my ($svc, $req) = @_;
-
     my $dbh   = $svc->{dbh};
     my $stomp = $svc->{stomp};
     my $cfg   = $svc->{cfg};
@@ -23,7 +40,7 @@ sub {
     my $stpcfg      = $cfg->{stomp};
     
     my %ret = {
-        status => 0,
+        status => -1,
         errmsg => '',
         ret    => ''
     };
@@ -40,49 +57,10 @@ sub {
              { destination => $stpcfg->{queue}->{proc}, body => $body } );
     
     # 如果没有发送出去
-    if ($sendsta != 1) {
-        $ret->{status} = -1;
+    if ($sendsta == 1) {
+        $ret->{status} = 0;
     }
     
-
-##    # 字典
-##    my $books     = $service->{meta}->{book};                # 账薄字典
-##    my $yspzs    = $service->{meta}->{yspz};                # 原始凭证字典
-##    # 辅助变量
-##    my $count = 0;
-##    my $sth;
-##    my $ys_id;
-##    
-##
-##    for my $idx (keys $data) {
-##        my $jd = $data->{$idx};
-##
-##        # 借 账本数据
-##        my $j      = $jd->{j_book};
-##        my $d      = $jd->{d_book};
-##        my $j_book = $j->{_type};
-##        my $d_book = $d->{_type};
-##    
-##        my $j_tbl  = "book_" . $books->{$j_book}->{value};
-##        my $d_tbl  = "book_" . $books->{$d_book}->{value};
-##        
-##        if ($count == 0) {
-##            # 组织0000原始凭证 
-##              my $source = {
-##                _type         => '0000',
-##
-##                STATUS          => '0',        
-##                CAUSE         => $cause,
-##
-##                FLAG          => 0                 # 撤销状态，默认为未撤销
-##              };
-##            ## 原始凭证
-##            $ys_id = $service->add_yspz_0000($source);
-##        }
-##
-##    }    
-    
-    
-       return \%ret;
+    return $ret;
 };
 

@@ -17,14 +17,11 @@ use constant {
 #
 sub _init {
     my $self = shift;
-	my $args = { @_ };
-	warn "Service args" . Data::Dump->dump($args);
-	for my $key (keys $args)  {
-		warn "key : $key";
-		$self->{$key} = $args->{$key};
-	}
-	print $self;
-	return $self;
+    my $args = { @_ };
+    for my $key (keys $args)  {
+        $self->{$key} = $args->{$key};
+    }
+    return $self;
 }
 
 sub handle {
@@ -34,17 +31,20 @@ sub handle {
     return $self->{svc}->{$req->{svc}}->($self, $req);
 }
 
-#
-# 通过会计几件和记账原始凭证类型和id查询记账凭证
-#
-sub jzpz_sel {
-    my $self    = shift;
-	my $period  = shift;
-	my $ys_type = shift;
-	my $ys_id	= shift;
 
-    $self->{meta}->[JZPZ]->[JZPZ_SEL]->execute($period, $ys_type, $ys_id);
-    return \$self->{meta}->[JZPZ]->[JZPZ_SEL]->fetchrow_array();
+################################################################
+# interface 外部接口
+###############################################################
+#
+
+#
+# 获取账薄元数据中的核算项字段列表
+#
+sub book_flist {
+    my $self = shift;
+    my $bid  = shift;
+    my $name = $self->{meta}->[DICT]->[DICT_BOOK]->{$bid}->{value};
+    return $self->{meta}->[BOOK]->{$name}->[BOOK_FLIST];
 }
 
 1;
