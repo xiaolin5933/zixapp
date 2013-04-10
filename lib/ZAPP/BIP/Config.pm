@@ -1,323 +1,439 @@
 package ZAPP::BIP::Config;
 use strict;
 use warnings;
+use ZAPP::BIP::Inst;
 use ZAPP::DT;
-# use ZAPP::BIP::BI;
 use constant {
-    DEBUG => $ENV{ZAPP_ALGO_CONFIG_DEBUG} || 0,
+    DEBUG => $ENV{ZAPP_BIP_CONFIG_DEBUG} || 0,
 };
 
-#
-# 这是重量级对象
-#
-#
-#  参数:
-#  dbh => $dbh
-#
-#  对象结构:
-#  {
-#     dbh     =>  $dbh
-#     bip     =>  $bip
-#     dept_bi => $dept_bi
-#     dt      => $dt,
-#  }
-#
-sub new {
-    my $self = bless {}, shift;
-    $self->_init({@_});
-    return $self;
+BEGIN {
+    require Data::Dump if DEBUG;
 }
 
 #
 # 参数:
-#       $bi  -  银行接口id
-# 功能:
-#       通过银行接口ID找到所有银行接口协议
-# 返回值:  
-#       ZAPP::BIP::BI
-# example:
-#       $self->bip($bi);
+# (
+#     dbh     => $dbh,
+# )
+# 对象结构:
+# {
+#     dbh    => $dbh,
+#     dt     => $dt,
+#     config => {
+#         # 账号字典
+#         acct => {
+#             $id => { sub_type => 1, sub_id   => 1 }
+#         },
+#         
+#         # 银行接口协议 
+#         bip => {
+#             $bi  => [
+#                 { 
+#                     begin =>
+#                     end   => 
+#                     bjhf  =>
+#                     round =>
 #
-sub bip { 
-    my ($self, $bi) = @_;
-    my $bip  = $self->{bip}->{$bi};
-#    return ZAPP::BIP::BI->new( 
-#        dbh   => $self->{dbh},
-#        bi    => $bi,
-#        proto => $bip,
-#        dt    => $self->{dt},
-#    );
+#                     # 规则组
+#                     group => {
+#                         gid-1 => [
+#                                 规则1
+#                                 { 
+#                                     hf   => { ... },  # 划付信息
+#                                     sect => [         # 计算区间
+#                                         { begin => xxx, end => xxx, ... }, # 区间1
+#                                         { begin => xxx, end => xxx, ... }, # 区间2
+#                                     ]
+#                                 },
+#                                 规则N
+#                                 { ... },  
+#                             ] 
+#                         ],
+#                         gid-2 => [],
+#                         gid-3 => [],
+#                     },
+#                 }
+#                 { ... },   # 协议N
+#             ],
+#             $bi_N => [ ... ],
+#         },
+#
+#         # dept_bi
+#         dept_bi => {
+#             "$dept_id.$dept_bi" => {
+#                 bi      => $bi,   # 银行接口
+#                 matcher   => {
+#                     $matcher1 => {
+#                         $bip => {},  # 规则组
+#                     },
+#                 },
+#             },
+#             #
+#         }
+#     }
+# }
+#
+sub new {
+    my $class = shift;
+    my $self = bless {}, $class;
+    $self->_init( { @_ } );
 }
 
 #
-# 外部部门id, 外部部门的银行接口ID,
-# 获取内部银行接口ID
-# $self->{$dept_id, $dept_bi);
-#
-sub dept_bi { shift->{dept_bi}->{+shift . '.' . +shift} }
-
-#
-# 构建$config对象
-# { 
-#    $bi_id_1 => [
-#       # 协议1
-#       {
-#           id          => '协议ID',
-#           begin       => ’协议开始日期'
-#           end         => '协议结束日期'
-#           bjhf => {
-#               acct   => '本金划付账号ID',
-#               period => '本金划付周期',
-#               delay  => '本金划付延迟',
-#               nwd    => '非工作日是否划付',
-#           },
-#
-#           round       => '取整规则',
-#           
-#           # 规则组
-#           frule => [
-#               # 规则组1
-#               {
-#                   algo => [
-#                       # 区间1
-#                       {
-#                           begin   =>  '区间开始'
-#                           end     =>  '区间结束'
-#                           mode    =>  '按比列|定额',     
-#                           ratio   =>  '比列值',
-#                           ceiling =>  '封顶',
-#                           floor   =>  '保底',
-#                           quota   =>  '定额',
-#                       }
-#                       # 区间2
-#                       {
-#                       }
-#                   ],
-#                   hf  => {
-#                       type =>
-#                       acct =>
-#                       period =>
-#                       delay  =>
-#                       nwd    => 
-#                   }
-#               },
-#               # 规则组2
-#               {
-#               },
-#               ... #最多五个规则组
-#           ],
-#       },
-#
-#       # 协议2
-#       {
-#       }
-#    ],
-#    $bi_id_2  => [],
-#    $bi_id_3  => [],
-# }
+# 构建config对象
 #
 sub _init {
-    my ($self, $args)  = @_;
-
+    my ($self, $args) = @_;
     $self->{dbh} = $args->{dbh};
-    my $bip   = $self->_load_bip();
-    my $proc  = $self->_load_proc();
-    my $algo  = $self->_load_algo();
-    my $hf    = $self->_load_hf();
-    my $dept_bi = $self->_load_dept_bi();
-    my $dt      = ZAPP::DT->new( dbh => $args->{dbh} );
+    $self->{dt}  = ZAPP::DT->new( dbh => $args->{dbh} );
 
-    my %data;
-    for my $bi_id (keys %$bip) {
-        my $proto = $bip->{$bi_id};
-        for my $p (@$proto) {
-            my $fp_id = $proc->{$p->{id}};
-            for (@$fp_id) {
-                push @{$p->{frule}}, {
-                    algo => $algo->{$_},
-                    hf   => $hf->{$_},
-                },
+    # group,  g_ed, ed_sect汇总调整
+    my $group   = $self->_load_frule_group();     # 协议ID           => \@规则组ID
+    my $g_ed    = $self->_load_frule_entry_d();   # gid              => { id(条目) => xxx, hf => {} }
+    my $ed_sect = $self->_load_frule_d_sect();    # 直接确认条目ID   => \@直接确认条目-计算区间
+    for my $bip_id ( keys %$group) {
+        my $gids = delete $group->{$bip_id};
+        for my $gid (@$gids) {
+            my $g_entries = $g_ed->{$gid};        # 规则组
+            for my $entry (@$g_entries) {
+                $entry->{sect} = $ed_sect->{delete $entry->{id}};
+                push@{$group->{$bip_id}{group}{$gid}}, $entry;
             }
         }
-        $data{$bi_id} = $proto;
     }
+    Data::Dump->dump($group) if DEBUG;
 
-    $self->{bip}     = \%data;
-    $self->{dept_bi} = $dept_bi;
-    $self->{dt}      = $dt;;
+    # 银行接口协议调整
+    my $bip = $self->_load_bip();
+    warn "bip:\n" . Data::Dump->dump($bip)     if DEBUG;
+    for my $bi_id ( keys %$bip ) {
+        for ( @{$bip->{$bi_id}} ) {
+            $_->{group} = $group->{$_->{id}}->{group};
+            Data::Dump->dump($_) if DEBUG;
+        }
+    }
+    Data::Dump->dump($bip) if DEBUG;
+
+    # 组dept_bi部分:  dept_bi + dfg
+    my $dept_bi = $self->_load_dept_bi(); 
+    my $dfg     = $self->_load_dept_frule_grp();
+    warn "dept_bi:\n" .  Data::Dump->dump($dept_bi) if DEBUG;
+    warn "dfg:\n" . Data::Dump->dump($dfg) if DEBUG;
+    #
+    # 目标:
+    # {
+    #     "$dept_id.$dept_bi" => {
+    #         bi      => $bi,   # 银行接口
+    #         matcher => {
+    #             $matcher1 => {
+    #                 $bip => $gid,
+    #             },
+    #         },
+    #     },
+    #     #
+    # }
+    #
+    # 来源:  $dept_bi
+    #        $dfg 
+    #
+    for my $db_id (keys %$dfg) {
+        for my $matcher (keys %{$dfg->{$db_id}}) {
+            for my $bip_id (keys %{$dfg->{$db_id}->{$matcher}}) {
+                my $gid = $dfg->{$db_id}->{$matcher}->{$bip_id};
+                $dfg->{$db_id}->{$matcher}->{$bip_id} = $group->{$bip_id}{group}{$gid};
+            }
+        }
+    }
+    for (keys %$dept_bi) {
+        my $db_id = delete $dept_bi->{$_}->{id};
+        $dept_bi->{$_}{matcher} = $dfg->{$db_id};
+    }
+    Data::Dump->dump($dept_bi) if DEBUG;
+
+    # 账号
+    # 账号ID => { sub_type => xxx, sub_id => xxx }    
+    my $acct = $self->_load_acct();            
+    warn "acct:\n" . Data::Dump->dump($acct) if DEBUG;
+
+    # 最终config
+    $self->{config} = {
+        acct => $acct,
+        dept => $dept_bi,
+        bip  => $bip,
+    };
 
     return $self;
 }
 
+#
+# my $inst = $self->( $部门id, $部门接口);
+#
+sub inst {
+    my ($self, $dept_id, $dept_bi) = @_;
+    my $config = $self->{config};
+
+    my $key = $dept_id . '.' . $dept_bi;
+    my $bi  = $config->{dept}->{$key}->{bi};   # 银行接口编号;
+
+    return ZAPP::BIP::Inst->new(
+        dbh    => $self->{dbh},
+        dt     => $self->{dt},
+
+        bi     => $bi,                              # 银行接口编号
+        proto  => $config->{bip}{$bi},              # 银行接口协议
+        acct   => $config->{acct},                  # 账号
+        matcher  => $config->{dept}{$key}{matcher}, # 规则组匹配
+    );
+}
 
 
-###################################################
+#
+# 加载dept_bi
 # {
-#    $bi_1 => [
-#        { },    # 协议1
-#        { },    # 协议2
-#    ]，
-#
-#    $bi_2 => [
-#        { },    # 协议1
-#        { },    # 协议2
-#    ]
+#     "$dept_id.$dept_bi"  => {
+#         id => $id
+#         bi => $bi 
+#     }
 # }
-###################################################
-sub _load_bip {
-    my ($self) = @_;
-    my $all = $self->{dbh}->selectall_arrayref(<<EOF, {Slice => {}});
-select
-    id,
-    bi_id,
-
-    begin,
-    end,
-
-    bjhf_acct,
-    bjhf_period,
-    bjhf_delay,
-    bjhf_nwd,
-
-    round
-from
-    bip
-order by 
-    bi_id, 
-    begin asc
+#
+sub _load_dept_bi {
+    my $dbh = shift->{dbh};
+    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+select id, dept_id, dept_bi, bi from dept_bi
 EOF
 
-    warn "bip info" and Data::Dump->dump($all) if DEBUG;
-
-    my %proto;
-    for (@$all) {
-        $_->{bjhf} = {
-            acct   => delete $_->{bjhf_acct},
-            period => delete $_->{bjhf_period},
-            delay  => delete $_->{bjhf_delay},
-            nwd    => delete $_->{bjhf_nwd},
+    my %data;
+    for ( @$all ) {
+        my $dept_id = delete $_->{dept_id};
+        my $dept_bi = delete $_->{dept_bi};
+        $data{ $dept_id . "." . $dept_bi } = {
+            id => $_->{id},
+            bi => $_->{bi},
         };
-        push @{$proto{delete $_->{bi_id}}}, $_;
     }
-    return \%proto;
+
+    return \%data;
 
 }
 
 #
-#  {
-#     $fp_id => [
-#     ],
-#  }
-#
-sub _load_algo {
-    my ($self, $fp_id) = @_;
-    my $all = $self->{dbh}->selectall_arrayref(<<EOF, {Slice => {}});
-select 
-    fp_id,
-    sect_id,
-    begin,
-    end ,
-    mode,
-    ratio,
-    ceiling,
-    floor,
-    quota
-from
-    frule_algo_sect
-order by 
-    fp_id, 
-    begin asc
-EOF
-    warn "frule_algo_sect info:" and  Data::Dump->dump($all) if DEBUG;
-    my %algo;
-    for my $row (@$all) {
-       push @{$algo{delete $row->{fp_id}}}, $row;
-    }
-    return \%algo;
-}
-
 #
 #  返回值:
 #  {
-#     $fp_id  => {
-#     },
-#
-#     $fp_id  => {
-#     },
+#     银行接口编号  => [
+#         {
+#            id    => '协议ID',
+#            begin =>  $beg,
+#            end   =>  $end,
+#            round =>  ...
+#            bjhf  => { ...本金划付信息 },
+#         }
+#     ]
 #  }
 #
-sub _load_hf {
-    my ($self) = @_;
-    my $all = $self->{dbh}->selectall_arrayref(<<EOF, {Slice => {}});
-select
-    fp_id,
+#
+sub _load_bip {
+    my $dbh = shift->{dbh};
+    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+select 
+    id, 
+    bi,
+    begin, 
+    end, 
+    bjhf_acct, 
+    bjhf_period, 
+    bjhf_delay, 
+    bjhf_nwd, 
+    round 
+from 
+    bip
+where 
+    disable = '0'
+order by 
+    bi,
+    begin asc
+EOF
+    my %bip;
+    for (@$all) {
+        my ($bi, $acct, $period, $delay, $nwd) = delete @{$_}{qw/bi bjhf_acct bjhf_period bjhf_delay bjhf_nwd/};
+        my %bjhf = (
+            acct   => $acct,
+            period => $period,
+            delay  => $delay,
+            nwd    => $nwd,
+        );
+        $_->{bjhf} = \%bjhf;
+        push @{$bip{$bi}}, $_;
+    }
+    return \%bip;
+}
+
+#
+#  规则组
+#  {
+#     协议1ID  => [ 规则组1-ID,  规则组2-ID],
+#     协议2ID  => [ 规则组1-ID,  规则组2-ID],
+#     协议3ID  => [ 规则组1-ID,  规则组2-ID],
+#  }
+#
+sub _load_frule_group {
+
+    my $dbh = shift->{dbh};
+    my $all = $dbh->selectall_arrayref(<<EOF,  { Slice => {}}); 
+select id, bip from frule_group
+EOF
+    my %bip_grp;
+    for (@$all) {
+        push @{$bip_grp{$_->{bip}}}, $_->{id};
+    }
+    return \%bip_grp;
+}
+
+#
+# 直接确认规则条目
+# {
+#     $gid_1 => [
+#         { id  => $xxx, hf => {} },
+#         { id  => $xxx, hf => {} },
+#         { id  => $xxx, hf => {} },
+#     ],
+#     $gid_2 => [
+#     ],
+# }
+#
+sub _load_frule_entry_d {
+    my $dbh = shift->{dbh};
+    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+select 
+    frule_entry.id,
+    gid,
     type,
     acct,
     period,
     delay,
     nwd
-from
-    frule_hf
+from 
+    frule_entry 
+left join 
+    frule_entry_d 
+on 
+    frule_entry.id = frule_entry_d.id
 EOF
-
-    warn "frule_hf info:" and  Data::Dump->dump($all) if DEBUG;
-    return {  map { delete $_->{fp_id} => $_ } @$all };
+    my %g_ed;
+    for (@$all) {
+        my $id  = delete $_->{id}; 
+        my $gid = delete $_->{gid}; 
+        push @{$g_ed{$gid}}, { id => $id, hf => $_ };
+    }
+    return \%g_ed;
 }
 
 #
-# 返回值:
+#  entry_d的ID
 # {
-#    $bip_id  =>  [ fp_id_1,  fp_id_2 ],
+#    $ed_id => {
+#        begin => xxx
+#        end   => xxx
+#        ...  
+#    }         
 # }
 #
-sub _load_proc {
-
-    my ($self) = @_;
-    my $all = $self->{dbh}->selectall_arrayref(<<EOF, {Slice => {}});
+sub _load_frule_d_sect {
+    my $dbh = shift->{dbh};
+    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select
     id,
-    bip_id
-from
-    frule_proc
+    ed_id,
+    begin,
+    end,
+    mode,
+    ratio,
+    ceiling,
+    floor ,
+    quota 
+from 
+    frule_d_sect
+order by
+    ed_id,
+    begin asc
 EOF
-    warn "frule_proc info:" and  Data::Dump->dump($all) if DEBUG;
 
-    my %proc;
-    for my $row (@$all) {
-        push @{$proc{delete $row->{bip_id}}}, $row->{id};
+    my %d_sect;
+    for (@$all) {
+        push @{$d_sect{delete $_->{ed_id}}}, $_;
     }
-    return \%proc;
+
+    return \%d_sect;
 }
 
 #
-# 返回:
 # {
-#    '部门1_id.接口id'  =>  $bi,
-#    '部门2_id.接口id'  =>  $bi,
-#    '部门3_id.接口id'  =>  $bi,
+#     $db_id1 => {
+#         $matcher => {
+#             $bip1  => $gid2,
+#             $bip2  => $gid2,
+#         }
+#     }
+#     $db_id2 => {}
 # }
 #
-sub _load_dept_bi {
-    my ($self) = @_;
-    my $all = $self->{dbh}->selectall_arrayref(<<EOF, {Slice => {}});
-select
-    dept_id,
-    dept_bi,
-    bi
-from
-    dict_dept_bi
-EOF
-    warn "dict_dept_bi info:" and  Data::Dump->dump($all) if DEBUG;
+sub _load_dept_frule_grp {
 
-    my %dept_bi;
-    for my $row (@$all) {
-        $dept_bi{$row->{dept_id} . '.' . $row->{dept_bi}} = $row->{bi};
+    my $dbh = shift->{dbh};
+    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} } );
+select 
+    db_id,
+    matcher,
+    bip,
+    gid
+from 
+    dept_frule_grp
+EOF
+
+    my %dfg;
+    for (@$all) {
+       my $db_id   = delete $_->{db_id};
+       my $matcher = delete $_->{matcher};
+       my $bip     = delete $_->{bip};
+       my $gid     = delete $_->{gid};
+       $dfg{$db_id}{$matcher}{$bip} = $gid;
     }
-    return \%dept_bi;
+    return \%dfg;
+}
+
+
+#
+# 账号信息加载:  
+#     dim_bfj_acct, 
+#     dim_zyzj_acct, 
+#     dim_acct
+# {
+#    $acct_id  => {
+#        sub_type  =>  
+#        sub_id    =>
+#    },
+#    $acct_id_2 => {},
+#    $acct_id_3 => {},
+#    $acct_id_4 => {},
+# }
+#
+sub _load_acct {
+    my $dbh = shift->{dbh};
+    my $all = $dbh->selectall_arrayref(<<EOF, {Slice => {}});
+select
+    id,
+    sub_type,
+    sub_id
+from
+    dim_acct
+EOF
+    return { map { delete $_->{id} => $_ } @$all };
 }
 
 
 1;
+
 
 __END__
 

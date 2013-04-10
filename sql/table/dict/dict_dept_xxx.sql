@@ -1,11 +1,15 @@
 --
---  银行接口-部门映射表
+--  
 --
-drop table dict_dept_bi;
-create table dict_dept_bi (
-    dept_id   integer  not null,
-    dept_bi   char(32) not null, 
-    bi        integer  not null
+drop table dict_dept_xxx;
+create table dict_dept_ (
+    -- id  <===> dept_id + dept_bi
+    id        integer  not null,     
+    matcher   char(32),
+    bip       integer  not null,
+
+    grp_id    integer not null 
+    
 ) in tbs_dat index in tbs_idx;
 
 -- 表名注释

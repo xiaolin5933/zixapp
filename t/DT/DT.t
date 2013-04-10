@@ -3,7 +3,7 @@ use Test::More;
 use Zeta::Run;
 use ZAPP::DT;
 use DateTime;
-plan tests  => 3;
+plan tests  => 4;
 
 do "$ENV{ZIXAPP_HOME}/libexec/plugin.pl";
 my $dbh = zkernel->zapp_dbh();
@@ -13,6 +13,7 @@ my $zdt = ZAPP::DT->new(dbh => $dbh);
 ok $zdt->next_n_wday('2012-12-30',  10)  eq  '2013-01-13';
 ok $zdt->next_n_wday('2012-12-30',  11)  eq  '2013-01-14';
 ok $zdt->next_n_wday('2012-12-30',  12)  eq  '2013-01-15';
+ok $zdt->is_wday('2013-01-01');
 
 done_testing();
 

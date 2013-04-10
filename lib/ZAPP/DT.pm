@@ -5,7 +5,7 @@ use DateTime;
 use DateTime::Duration;
 use Carp;
 use constant {
-    DEBUG      => $ENV{ZAPP_DT_DEBUG} || 0,
+    DEBUG => $ENV{ZAPP_DT_DEBUG} || 0,
 };
 
 BEGIN {
@@ -58,8 +58,6 @@ EOF
         };
     }
     $sel->finish();
-    $dbh->rollback();
-    $dbh->disconnect();
    
     return $self;
 }
@@ -73,10 +71,9 @@ EOF
 sub next_n_wday {
     my ($self, $date, $n) = @_;
     return $date if $n == 0;
-
     $date =~ /(\d{4})-(\d{2})-(\d{2})/;
-    my $dt = DateTime->new(time_zone => 'local', year => $1, month => $2, day => $3);
-    return $self->next_n_wday_dt($dt, $n)->ymd('-');
+    return $self->next_n_wday_dt(
+        DateTime->new(time_zone => 'local', year => $1, month => $2, day => $3), $n)->ymd('-');
 }
 
 #
