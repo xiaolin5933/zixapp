@@ -1,0 +1,129 @@
+[
+  {
+    'd_dim' => [
+                 'bfj_acct',
+                 'period',
+                 'zjbd_date_in_bfj',
+                 'bfj_zjbd_type'
+               ],
+    'db_id' => '22',
+    'fid' => '1.1',
+    'jb_id' => '14',
+    'j_dim' => [
+                 'bfj_acct',
+                 'period'
+               ],
+    'amt' => 'yhys_txamt'
+  },
+  {
+    'd_dim' => [
+                 'bfj_acct',
+                 'period',
+                 'zjbd_date_in_bfj',
+                 'bfj_zjbd_type'
+               ],
+    'db_id' => '4',
+    'fid' => '2.1',
+    'jb_id' => '14',
+    'j_dim' => [
+                 'bfj_acct',
+                 'period'
+               ],
+    'amt' => 'yhys_bfee'
+  },
+  {
+    'd_dim' => [
+                 'bfj_acct',
+                 'period'
+               ],
+    'db_id' => '14',
+    'fid' => '3.1',
+    'jb_id' => '21',
+    'j_dim' => [
+                 'bfj_acct',
+                 'period',
+                 'zjbd_date_out_bfj',
+                 'bfj_zjbd_type'
+               ],
+    'amt' => 'yhyf_txamt'
+  },
+  {
+    'd_dim' => [
+                 'bfj_acct',
+                 'period'
+               ],
+    'db_id' => '14',
+    'fid' => '4.1',
+    'jb_id' => '3',
+    'j_dim' => [
+                 'bfj_acct',
+                 'period',
+                 'zjbd_date_out_bfj',
+                 'bfj_zjbd_type'
+               ],
+    'amt' => 'yhyf_bfee'
+  },
+  {
+    'd_dim' => [
+                 'period',
+                 'zjbd_date_in_zyzj',
+                 'zyzj_zjbd_type',
+                 'zyzj_acct'
+               ],
+    'db_id' => '2',
+    'fid' => '5.1',
+    'jb_id' => '15',
+    'j_dim' => [
+                 'period',
+                 'zyzj_acct'
+               ],
+    'amt' => 'yhys_bamt'
+  },
+  {
+    'd_dim' => [
+                 'period',
+                 'zyzj_acct'
+               ],
+    'db_id' => '15',
+    'fid' => '6.1',
+    'jb_id' => '1',
+    'j_dim' => [
+                 'period',
+                 'zjbd_date_out_zyzj',
+                 'zyzj_zjbd_type',
+                 'zyzj_acct'
+               ],
+    'amt' => 'yhyf_bamt'
+  },
+  {
+    'd_dim' => [
+                 'bfj_acct',
+                 'e_date_bfj',
+                 'period',
+                 'bfj_zjbd_type'
+               ],
+    'db_id' => '6',
+    'fid' => '7.1',
+    'jb_id' => '14',
+    'j_dim' => [
+                 'bfj_acct',
+                 'period'
+               ],
+    'amt' => 'bfj_blc'
+  },
+  {
+    'd_dim' => [
+                 'e_date_zyzj',
+                 'period',
+                 'zyzj_acct'
+               ],
+    'db_id' => '7',
+    'fid' => '8.1',
+    'jb_id' => '15',
+    'j_dim' => [
+                 'period',
+                 'zyzj_acct'
+               ],
+    'amt' => 'zyzj_blc'
+  }
+];

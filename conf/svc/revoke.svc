@@ -3,60 +3,11 @@
 # 撤销原始凭证
 #
 
-
-# 
-# 为Service注册revoke方法
-#
-*{ "ZAPP::Service" . "::revoke" } = sub {
-    require DateTime;
-    my ($class, $svc, $req) = @_;
-    my $data = $req->{data};
-    #
-    my $dt = DateTime->now(time_zone => 'local');
-    my $period       = $data->{period};
-    my $ys_type      = $data->{ys_type};
-    my $ys_id        = $data->{ys_id};
-    my $revoke_user  = $data->{rk_user};
-    my $revoke_cause = $data->{revoke_cause};
-    my $ts_revoke    = $dt->ymd('-') . ' ' . $dt->hms(':');
-    # 查询指定原始凭证类型与原始凭证id的记账凭证
-    my $jzpzs = $svc->jzpz_sel($period, $ys_type, $ys_id);
-    foreach my $jzpz(@$jzpzs)    {
-        ## 老账薄表
-        my $j =    $svc->book_sel($jzpz->{jb_id}, $period, $jzpz->{j_id});
-        my $d =    $svc->book_sel($jzpz->{db_id}, $period, $jzpz->{d_id});
-        if ($j->{j} <= 0) {
-            return;
-        }
-        if ($d->{d} <= 0) {
-            return;
-        }
-        ## 新账薄表
-        $j->{j} = -($j->{j});
-        $d->{d} = -($d->{d});
-        # 插入分录: 借方记录, 贷方记录, 记账凭证
-        my @ys      = ($ys_type, $ys_id);
-        my $jzpz_id = $svc->jzpz_id();
-        my @misc    = (@ys, $jzpz_id);
-        
-        my $j_id  = $svc->book_insert($jzpz->{jb_id}, @{$j}{@{$svc->book_flist($jzpz->{jb_id})}}, $j->{j}, 0,    @misc);
-        my $d_id  = $svc->book_insert($jzpz->{db_id}, @{$d}{@{$svc->book_flist($jzpz->{db_id})}}, 0,    $d->{d}, @misc);
-        $svc->jzpz($jzpz_id, $j_id, $d_id, $jzpz->{jb_id}, $jzpz->{db_id}, @ys, $jzpz->{fid}, $period);
-         
-    }
-    # 通过原始凭证会计期间与id，更新原始凭证的 撤销状态,撤销原因,撤销用户,撤销时间
-    $svc->yspz_upd_rk($ys_type, $revoke_cause, $revoke_user, $ts_revoke, $period, $ys_id); 
-
-    $svc->commit;
-    
-};
-
 #
 # $svc对象:  {
 #     dbh        => $dbh
 #     stomp      => $stomp,
-#     serializer => $ser,
-#     service    => $svc, 
+#     cfg        => $cfg,
 # }
 #--------------------------------------
 # req:  {
@@ -86,10 +37,50 @@ sub {
         ret    => ''
     };
 
-    my $re = ZAPP::Service->revoke($svc, $req);
-    if (defined $re) {
-        $ret->{status} = 0;
+    ###
+    # 撤销逻辑
+    ### 
+    require DateTime;
+    #
+    my $dt = DateTime->now(time_zone => 'local');
+    my $period       = $req->{data}->{period};
+    my $ys_type      = $req->{data}->{ys_type};
+    my $ys_id        = $req->{data}->{ys_id};
+    my $revoke_user  = $req->{data}->{rk_user};
+    my $revoke_cause = $req->{data}->{revoke_cause};
+    my $ts_revoke    = $dt->ymd('-') . ' ' . $dt->hms(':');
+    # 查询指定原始凭证类型与原始凭证id的记账凭证
+    my $jzpzs = $svc->jzpz_sel($period, $ys_type, $ys_id);
+    foreach my $jzpz(@$jzpzs)    {
+        ## 老账薄表
+        my $j =    $svc->book_sel($jzpz->{jb_id}, $period, $jzpz->{j_id});
+        my $d =    $svc->book_sel($jzpz->{db_id}, $period, $jzpz->{d_id});
+        if ($j->{j} <= 0) {
+            return;
+        }
+        if ($d->{d} <= 0) {
+            return;
+        }
+        ## 新账薄表
+        $j->{j} = -($j->{j});
+        $d->{d} = -($d->{d});
+        # 插入分录: 借方记录, 贷方记录, 记账凭证
+        my @ys      = ($ys_type, $ys_id);
+        my $jzpz_id = $svc->jzpz_id();
+        my @misc    = (@ys, $jzpz_id);
+
+        my $j_id  = $svc->book_insert($jzpz->{jb_id}, @{$j}{@{$svc->book_flist($jzpz->{jb_id})}}, $j->{j}, 0,    @misc);
+        my $d_id  = $svc->book_insert($jzpz->{db_id}, @{$d}{@{$svc->book_flist($jzpz->{db_id})}}, 0,    $d->{d}, @misc);
+        $svc->jzpz($jzpz_id, $j_id, $d_id, $jzpz->{jb_id}, $jzpz->{db_id}, @ys, $jzpz->{fid}, $period);
+
     }
+    # 通过原始凭证会计期间与id，更新原始凭证的 撤销状态,撤销原因,撤销用户,撤销时间
+    $svc->yspz_upd_rk($ys_type, $revoke_cause, $revoke_user, $ts_revoke, $period, $ys_id);
+
+    $svc->commit;
+
+    # 执行成功
+    $ret->{status} = 0;
    
     # 
     return $ret;

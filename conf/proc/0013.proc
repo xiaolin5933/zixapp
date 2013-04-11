@@ -1,0 +1,30 @@
+[
+  {
+    'd_dim' => [
+                 'bfj_acct',
+                 'period',
+                 'zjbd_date_out',
+                 'zjbd_type'
+               ],
+    'db_id' => '21',
+    'fid' => '1.1',
+    'jb_id' => '26',
+    'j_dim' => [
+                 'period'
+               ],
+    'amt' => 'zhgl_fee'
+  },
+  {
+    'd_dim' => [
+                 'period'
+               ],
+    'db_id' => '23',
+    'fid' => '1.2',
+    'jb_id' => '16',
+    'j_dim' => [
+                 'bfj_acct',
+                 'period'
+               ],
+    'amt' => 'zhgl_fee'
+  }
+];

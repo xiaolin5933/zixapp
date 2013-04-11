@@ -4,8 +4,7 @@
 # $svc对象:  {
 #     dbh        => $dbh
 #     stomp      => $stomp,
-#     serializer => $ser,
-#     service    => $svc, 
+#     cfg        => $cfg,
 # }
 #-----------------------------------------
 # req:  {
@@ -14,8 +13,8 @@
 #         period   => $period,
 #         jd_books => {
 #             "0" => {
-#                 d_book => { _type => 2005.01, BFJ_ACCT => 1, D => 1, ZJBD_DATE => 1, ZJBD_TYPE => 1 },
-#                 j_book => { _type => 1020.03, J => 1, ZJBD_DATE => 1, ZJBD_TYPE => 1, ZYZJ_ACCT => 1 },
+#                 d_book => { _type => 2005.01, bfj_acct => 1, d => 1, zjbd_date => 1, zjbd_type => 1 },
+#                 j_book => { _type => 1020.03, j => 1, zjbd_date => 1, zjbd_type => 1, zyzj_acct => 1 },
 #             },
 #         },
 #     },

@@ -10,26 +10,25 @@ create table yspz_0011 (
     status                char(1) not null,
 
 -- 业务字段
-    bfj_acct              integer not null,
-    zyzj_acct             integer not null,
-    zjbd_type             integer not null,
-    zjbd_type_zjdb        integer not null,
-    bi                    integer not null,
+    bfj_acct              integer,
+    zyzj_acct             integer,
+    bfj_zjbd_type         integer,
+    zyzj_zjbd_type        integer,
     period                date not null,
-    zjbd_date_out_bfj     date not null,
-    zjbd_date_in_bfj      date not null,
-    e_date_bfj            date not null,
-    zjbd_date_out_zyzj    date not null,
-    zjbd_date_in_zyzj     date not null,
-    e_date_zyzj           date not null,
+    zjbd_date_out_bfj     date,
+    zjbd_date_in_bfj      date,
+    e_date_bfj            date,
+    zjbd_date_out_zyzj    date,
+    zjbd_date_in_zyzj     date,
+    e_date_zyzj           date,
     yhys_txamt            bigint not null,
     yhys_bamt             bigint not null,
     yhys_bfee             bigint not null,
     yhyf_txamt            bigint not null,
     yhyf_bamt             bigint not null,
     yhyf_bfee             bigint not null,
-    bfj_blc               bigint not null,
-    zyzj_blc              bigint not null,
+    bfj_blc               bigint,
+    zyzj_blc              bigint,
 
 -- revoke-concerned
     flag                  char(1),
@@ -49,9 +48,8 @@ comment on column yspz_0011.status               is '原始凭证处理状态. 0
 
 comment on column yspz_0011.bfj_acct             is '备付金银行账号';
 comment on column yspz_0011.zyzj_acct            is '自有资金银行账号';
-comment on column yspz_0011.zjbd_type            is '资金变动类型';
-comment on column yspz_0011.zjbd_type_zjdb       is '资金变动类型 - 资金调拨';
-comment on column yspz_0011.bi                   is '银行接口编号';
+comment on column yspz_0011.bfj_zjbd_type        is '备付金资金变动类型';
+comment on column yspz_0011.zyzj_zjbd_type       is '自有资金资金变动类型';
 comment on column yspz_0011.period               is '会计期间';
 comment on column yspz_0011.zjbd_date_out_bfj    is '备付金银行出账日期';
 comment on column yspz_0011.zjbd_date_in_bfj     is '备付金银行入账日期';

@@ -28,8 +28,7 @@ comment on column dim_zjbd_type.ts_c                 is '创建时间';
 --
 -- zark begin
 insert into dim_zjbd_type(id, name) values
-(1, '银行接口编号'),
-(2, '账户利息'),
-(3, '账户管理费'),
-(4, '资金调拨');
+(-1, '账户利息'),
+(-2, '账户管理费'),
+(-3, '资金调拨');
 -- zark end

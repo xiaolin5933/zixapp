@@ -11,6 +11,7 @@ create table yspz_0000 (
 
 -- 业务字段
     cause                 varchar(512) not null,
+    period                date not null,
 
 -- revoke-concerned
     flag                  char(1),
@@ -29,6 +30,7 @@ comment on column yspz_0000.id                   is '原始配置id';
 comment on column yspz_0000.status               is '原始凭证处理状态. 0:  未处理   1: 处理成功   2: 处理失败。';
 
 comment on column yspz_0000.cause                is '调账原因';
+comment on column yspz_0000.period               is '会计期间';
 
 comment on column yspz_0000.flag                 is '撤销标志';
 comment on column yspz_0000.revoke_cause         is '撤销原因';

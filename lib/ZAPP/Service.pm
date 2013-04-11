@@ -47,4 +47,21 @@ sub book_flist {
     return $self->{meta}->[BOOK]->{$name}->[BOOK_FLIST];
 }
 
+#
+# 获取原始凭证元数据中的核算项字段列表
+#
+sub yspz_flist {
+    my $self  = shift;
+    my $name  = shift;
+    return $self->{meta}->[YSPZ]->{$name}->[YSPZ_FLIST];
+}
+
+#
+# 获取所有的核算项信息
+#
+sub dims {
+    my $self = shift;
+    return $self->{meta}[DIM];
+}
+
 1;

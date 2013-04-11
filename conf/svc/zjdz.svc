@@ -1,22 +1,176 @@
 #!perl
 
+
+
 #
 # $svc对象:  {
 #     dbh        => $dbh
 #     stomp      => $stomp,
-#     serializer => $ser,
-#     service    => $svc, 
+#     cfg        => $cfg,
 # }
 #--------------------------------
-# req:
+# req: {
+#           data => {
+#                       acct_id   => 1,
+#                       acct_type => 1,             # 1 备付金， 2 自有资金
+#                       b_acct    => 2312132131321,
+#                       zjbd_date => "2013-04-03",
+#                       zjbd_type => {
+#                                      "0" => { ch_d => 0, ch_j => 0 },         #  
+#                                      "1" => { ch_d => 0, ch_j => 111111 },        # 
+#                                     },
+#                     },
+#           svc  => "zjdz",
+#           sys  => { oper_user => 1 },
+# }
 #
-# res:
+# res:  {
+#     status => 0,  # 0 成功, 其他失败
+#     errmsg => '',
+#     ret    => ''
+# }
 #
 sub {
-   my ($svc, $req) = @_;
+    my ($svc, $req) = @_;
+    my $dbh   = $svc->{dbh};
+    my $stomp = $svc->{stomp};
+    my $cfg   = $svc->{cfg};
 
-   return {
-      hello => 'world',
-   };
+    my $serializer  = $cfg->{serializer};
+    my $stpcfg      = $cfg->{stomp};
+    
+    my %ret = {
+        status => -1,
+        errmsg => '',
+        ret    => ''
+    };
+    # 备付金账户对账
+    my $ch_real;                # 实际资金变化
+    my $ch;                     # 预计资金变化
+    my @sources;                # 原始凭证集合
+    my $source;                 # 单个原始凭证
+    if ($req->{data}->{acct_type} == 1) {       # 备付金对账
+        my $yhyf_txamt;         # 从汇总表获取 已核应付交易款
+        my $yhys_txamt;         # 从汇总表获取 已核应收交易款
+        my $yhyf_bfee;          # 从汇总表获取 已核应付银行手续费
+        my $yhys_bfee;          # 从汇总表获取 已核应收银行手续费
+        
+        my $sth_txamt_yhys = $dbh->prepare("select j from sum_txamt_yhys where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
+        my $sth_bfee_yhys = $dbh->prepare("select j from sum_bfee_yhys where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
+        my $sth_txamt_yhyf = $dbh->prepare("select d from sum_txamt_yhyf where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
+        my $sth_bfee_yhyf = $dbh->prepare("select d from sum_bfee_yhyf where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
+        
+
+        for my $type(keys $req->{data}->{zjbd_type}) {
+            $ch_real = $req->{data}->{zjbd_type}->{$type}->{ch_j} - $req->{data}->{zjbd_type}->{$type}->{ch_d};
+            if ($ch_real == 0) {
+                next;
+            }
+            # 处理此账户不同变动类型的对账
+            # 如果为其他变动类型
+            $yhyf_txamt = 0;
+            $yhys_txamt = 0;
+            $yhyf_bfee  = 0;
+            $yhys_bfee  = 0;
+            if ( $type ne '0' ) {
+                # 如果为确定变动类型
+                # 从账务系统中算出来的资金变化(预算资金变化)
+                $sth_txamt_yhys->execute($req->{data}->{acct_id}, $req->{data}->{zjbd_date}, $type); 
+                $sth_bfee_yhys->execute($req->{data}->{acct_id}, $req->{data}->{zjbd_date}, $type);
+                $sth_txamt_yhyf->execute($req->{data}->{acct_id}, $req->{data}->{zjbd_date}, $type);
+                $sth_bfee_yhyf->execute($req->{data}->{acct_id}, $req->{data}->{zjbd_date}, $type); 
+
+                ($yhys_txamt)   = $sth_txamt_yhys->fetchrow_array() || (0);
+                $sth_txamt_yhys->finish;
+                ($yhys_bfee)    = $sth_bfee_yhys->fetchrow_array()  || (0);
+                $sth_bfee_yhys->finish;
+                ($yhyf_txamt)   = $sth_txamt_yhyf->fetchrow_array() || (0);
+                $sth_txamt_yhyf->finish;
+                ($yhyf_bfee)    = $sth_bfee_yhyf->fetchrow_array()  || (0);
+                $sth_bfee_yhyf->finish;
+                
+            }
+            # 预计资金变化
+            $ch = ( $yhys_txamt + $yhys_bfee ) - ( $yhyf_txamt + $yhyf_bfee );
+            if ( $ch_real < $ch ) {
+                # 短款 0012 凭证
+                $source = {
+                    _type               => '0012',
+                    bfj_acct            => $req->{data}->{acct_id},
+                    bfj_zjbd_type       => $type,
+                    period              => $req->{data}->{zjbd_date},
+                    zjbd_date_out_bfj   => $req->{data}->{zjbd_date}, 
+                    zjbd_date_in_bfj    => $req->{data}->{zjbd_date},
+                    e_date_bfj          => $req->{data}->{zjbd_date},
+                    yhys_txamt          => $yhys_txamt, 
+                    yhys_bamt           => 0,
+                    yhys_bfee           => $yhys_bfee,
+                    yhyf_txamt          => $yhyf_txamt,
+                    yhyf_bamt           => 0,
+                    yhyf_bfee           => $yhyf_bfee,
+                    bfj_bsc             => abs($ch_real - $ch), 
+                };
+                push @sources, $source;
+            }
+            elsif ( $ch_real > $ch ) {
+                # 长款 0011 凭证
+                $source = {
+                    _type               => '0011',
+                    bfj_acct            => $req->{data}->{acct_id},
+                    bfj_zjbd_type       => $type,
+                    period              => $req->{data}->{zjbd_date},
+                    zjbd_date_out_bfj   => $req->{data}->{zjbd_date},
+                    zjbd_date_in_bfj    => $req->{data}->{zjbd_date},
+                    e_date_bfj          => $req->{data}->{zjbd_date},
+                    yhys_txamt          => $yhys_txamt,
+                    yhys_bamt           => 0,
+                    yhys_bfee           => $yhys_bfee,
+                    yhyf_txamt          => $yhyf_txamt,
+                    yhyf_bamt           => 0,
+                    yhyf_bfee           => $yhyf_bfee,
+                    bfj_blc             => abs($ch_real - $ch), 
+
+                };
+                push @sources, $source;
+            }
+            else {
+                # 如果资金变动类型不为其他，那么资金对账成功
+                if ($type ne '0') {
+                    # 成功 0010 凭证
+                    $source = {
+                        _type               => '0010',
+                        bfj_acct            => $req->{data}->{acct_id},
+                        bfj_zjbd_type       => $type,
+                        period              => $req->{data}->{zjbd_date},
+                        zjbd_date_out_bfj   => $req->{data}->{zjbd_date},
+                        zjbd_date_in_bfj    => $req->{data}->{zjbd_date},
+                        yhys_txamt          => $yhys_txamt,
+                        yhys_bamt           => 0,
+                        yhys_bfee           => $yhys_bfee,
+                        yhyf_txamt          => $yhyf_txamt,
+                        yhyf_bamt           => 0,
+                        yhyf_bfee           => $yhyf_bfee,
+                    };
+                    push @sources, $source;
+                }
+            }
+        } 
+    }
+    elsif ($req->{data}->{acct_type} == 1) {
+        $ret->errmsg = "not support";
+    }
+    # 发送到凭证处理消息队列
+    my $status = -1;
+    for my $src(@sources) {
+        $status = 0; 
+        $src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
+        $svc->commit;
+        # send
+        $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+    }
+    
+    $ret->{status} = $status; 
+
+    return $ret;
 };
 

@@ -4,8 +4,7 @@
 # $svc对象:  {
 #     dbh        => $dbh
 #     stomp      => $stomp,
-#     serializer => $ser,
-#     service    => $svc, 
+#     cfg        => $cfg,
 # }
 #
 sub {

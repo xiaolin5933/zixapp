@@ -1,0 +1,32 @@
+[
+  {
+    'd_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'db_id' => '24',
+    'fid' => '1.1',
+    'jb_id' => '22',
+    'j_dim' => [
+                 'bfj_acct',
+                 'period',
+                 'zjbd_date_in',
+                 'zjbd_type'
+               ],
+    'amt' => 'zhlx_amt'
+  },
+  {
+    'd_dim' => [
+                 'bfj_acct',
+                 'period'
+               ],
+    'db_id' => '18',
+    'fid' => '1.2',
+    'jb_id' => '25',
+    'j_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'amt' => 'zhlx_amt'
+  }
+];

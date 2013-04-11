@@ -1,0 +1,34 @@
+[
+  {
+    'd_dim' => [
+                 'c',
+                 'period'
+               ],
+    'db_id' => '5',
+    'fid' => '1.1',
+    'jb_id' => '19',
+    'j_dim' => [
+                 'bi',
+                 'period',
+                 'tx_date'
+               ],
+    'amt' => 'tx_amt'
+  },
+  {
+    'd_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'db_id' => '17',
+    'fid' => '2.1',
+    'jb_id' => '11',
+    'j_dim' => [
+                 'c',
+                 'cust_proto',
+                 'period',
+                 'tx_date'
+               ],
+    'amt' => 'wk_cfee'
+  }
+];

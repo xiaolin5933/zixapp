@@ -8,7 +8,8 @@ create table dim_bi (
     id                    integer not null primary key,
 
 -- 相关信息字段   
-    name                  char(32),
+    type                  char(2),
+    name                  varchar(128),
     memo                  varchar(512),
 
 -- 创建时间
@@ -18,6 +19,7 @@ create table dim_bi (
 comment on table  dim_bi                      is '银行接口编号';
 comment on column dim_bi.id                   is 'id';
 
+comment on column dim_bi.type                 is '银行接口类型';
 comment on column dim_bi.name                 is '名称';
 comment on column dim_bi.memo                 is '备注';
 
