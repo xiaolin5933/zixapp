@@ -1,0 +1,88 @@
+#!perl
+
+#
+# $svc对象:  {
+#     dbh        => $dbh
+#     stomp      => $stomp,
+#     cfg        => $cfg,
+# }
+#-----------------------------------------
+# req:  {
+#   data => {
+#       _type  => "0006",
+#       data   => [
+#           { clfs => 0, id => 1, period => '2013-04-01' },
+#           { clfs => 1, id => 2, memo => "memo2", yqr_c => "cid", period => '2013-04-01' },
+#       ],
+#   },
+#   svc  => "yspz_0006",
+#   sys  => { oper_user => 1 },
+# }
+#
+# res:  {
+#     status => 0,  # 0 成功, 其他失败
+#     errmsg => '',
+#     ret    => ''
+# }
+# 
+# ok
+sub {
+    my ($svc, $req) = @_;
+    my $dbh   = $svc->{dbh};
+    my $stomp = $svc->{stomp};
+    my $cfg   = $svc->{cfg};
+    
+    my $serializer  = $cfg->{serializer};
+    my $stpcfg      = $cfg->{stomp};
+    
+    my %ret = {
+        status => -1,
+        errmsg => '',
+        ret    => ''
+    };
+    #
+    my $src;
+    my $yspz4;
+    my @sources;
+    for my $ys( @{ $req->{data}->{data} } ) {
+        Data::Dump->dump($ys);
+        $yspz4 = $svc->sel_0004($ys->{period}, $ys->{id});
+        $src = {
+            _type       => '0006',
+            ssn         => $yspz4->{ssn},
+            bi          => $yspz4->{bi},
+            p           => $yspz4->{p},
+            wqr_c       => $yspz4->{wqr_c},
+            period      => $yspz4->{period},
+            tx_date     => $yspz4->{tx_date},
+            tx_amt      => $yspz4->{tx_amt},
+            bfee        => $yspz4->{bfj_bfee} + $yspz4->{cwwf_bfee},
+        };
+        if ( $ys->{clfs} == 1 ) {
+            $src->{yqr_c} = $ys->{yqr_c};
+            use URI::Escape;
+            use Encode;
+            $src->{memo}  = uri_unescape( $ys->{memo} );
+            
+        }
+        push @sources, $src;
+    }
+
+    my $status = -1;
+    for my $src(@sources) {
+        $status = 0;
+        unless ( defined $src->{yqr_c} ) {
+            next;
+        }
+        #
+        $src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
+        $svc->commit;
+        # send
+        $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+    }
+
+    $ret->{status} = 0;
+    
+    return $ret;
+};
+

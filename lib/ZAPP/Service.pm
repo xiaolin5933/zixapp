@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use base qw/Zark/;
 use Zark::Constant;
+use ZAPP::BIP::Config;
 use constant {
 	DEBUG => $ENV{ZAPP_DEBUG} || 0,
 };
@@ -21,6 +22,8 @@ sub _init {
     for my $key (keys $args)  {
         $self->{$key} = $args->{$key};
     }
+    # Config(计费模块) 对象，只有一个 (可以计算银行手续费，划付等)
+    $self->{bip_cfg} = ZAPP::BIP::Config->new( dbh => $self->{dbh} );
     return $self;
 }
 

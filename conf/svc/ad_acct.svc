@@ -45,6 +45,10 @@ sub {
     };
     # 客户端请求过来的消息
     my $data         = $req->{data};                           # 会计分录
+    use URI::Escape;
+    use Encode;
+    $data->{cause}   = decode( 'utf-8', uri_unescape($data->{cause}) );
+    
     my $sys          = $req->{sys};
     # 组织特种调账单
     my %src;

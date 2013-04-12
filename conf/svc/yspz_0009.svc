@@ -1,0 +1,83 @@
+#!perl
+
+#
+# $svc对象:  {
+#     dbh        => $dbh
+#     stomp      => $stomp,
+#     cfg        => $cfg,
+# }
+#-----------------------------------------
+# req:  {
+#   data => {
+#       _type           => "0009",
+#       bi              => 1,
+#       c               => "cid",
+#       cust_proto      => 1,
+#       memo            => "",
+#       ssn             => "ssn123",
+#       tx_amt          => 244,
+#       wk_cfee         => 123,
+#       zjbd_date_out   => "2013-04-02",
+#   },
+#   svc  => "yspz_0009",
+#   sys  => { oper_user => 1 },
+# }
+#
+# res:  {
+#     status => 0,  # 0 成功, 其他失败
+#     errmsg => '',
+#     ret    => ''
+# }
+#
+#
+sub {
+    my ($svc, $req) = @_;
+    my $dbh   = $svc->{dbh};
+    my $stomp = $svc->{stomp};
+    my $cfg   = $svc->{cfg};
+    
+    my $serializer  = $cfg->{serializer};
+    my $stpcfg      = $cfg->{stomp};
+    
+    my %ret = {
+        status => -1,
+        errmsg => '',
+        ret    => ''
+    };
+
+    my $src = $req->{data};
+
+    # 获取指定bi的协议
+    my $bips = $svc->{bip_cfg}->{config}->{bip}->{$src->{bi}};
+
+    # 获取指定有效期的银行协议
+    my $date = '2013-04-01';
+    my $bip;
+    for my $b(@$bips) {
+        if ( $date ge $b->{begin} && $date le $b->{end} ) {
+            $bip = $b;
+            last;
+        }
+    }
+
+
+    # 本金备付金帐号，通过银行接口中的银行协议获取
+    $src->{bfj_acct_bj} = $bip->{bjhf}->{acct};
+    $src->{period}      = $src->{zjbd_date_out};
+    $src->{p}           = 3;
+    $src->{tx_date}     = $src->{zjbd_date_out};
+    $src->{cwwf_bfee}   = 30;  # ?  暂时写死的, 并且原始凭证0009， 0002， 0003 与 账薄 定期划付客户手续费 cust_proto 应该为char型
+    use URI::Escape;
+    use Encode;
+    $src->{memo}        = uri_unescape( $src->{memo} );
+    #
+    #$src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
+    #$svc->commit;
+    # send
+    #$stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+
+    $ret->{status} = 0;
+    
+    return $ret;
+};
+

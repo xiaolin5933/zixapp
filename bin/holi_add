@@ -37,6 +37,8 @@ my $dbh = DBI->connect(
     },
 );
 
+$dbh->do("set current schema $ENV{DB_SCHEMA}");
+
 #
 # create table dict_holi (
 #     year     integer  not null,

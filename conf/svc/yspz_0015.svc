@@ -1,0 +1,64 @@
+#!perl
+
+#
+# $svc对象:  {
+#     dbh        => $dbh
+#     stomp      => $stomp,
+#     cfg        => $cfg,
+# }
+#-----------------------------------------
+# req:  {
+# {
+#   data => {
+#       _type           => "0015",
+#       bfj_acct_in     => 1,
+#       bfj_acct_out    => 1,
+#       bfj_bfee        => 86,
+#       memo            => "",
+#       zjbd_date_in    => "2013-04-01",
+#       zjbd_date_out   => "2013-04-01",
+#       zjhb_amt        => 234,
+#   },
+#   svc  => "yspz_0015",
+#   sys  => { oper_user => 1 },
+# }
+#
+# res:  {
+#     status => 0,  # 0 成功, 其他失败
+#     errmsg => '',
+#     ret    => ''
+# }
+#
+# ok
+sub {
+    my ($svc, $req) = @_;
+    my $dbh   = $svc->{dbh};
+    my $stomp = $svc->{stomp};
+    my $cfg   = $svc->{cfg};
+    
+    my $serializer  = $cfg->{serializer};
+    my $stpcfg      = $cfg->{stomp};
+    
+    my %ret = {
+        status => -1,
+        errmsg => '',
+        ret    => ''
+    };
+
+    my $src = $req->{data};
+    $src->{zjbd_type}   = -3;
+    $src->{period}      = $src->{zjbd_date_out};
+    use URI::Escape;
+    use Encode;
+    $src->{memo}      = uri_unescape($src->{memo});
+    #
+    $src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
+    $svc->commit;
+    # send
+    $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+
+    $ret->{status} = 0;
+    
+    return $ret;
+};
+
