@@ -13,7 +13,7 @@ create table yspz_0006 (
     ssn                   char(32) not null,
     bi                    integer not null,
     p                     integer not null,
-    yqr_c                 char(32) not null,
+    yqr_c                 char(32),
     wqr_c                 char(32) not null,
     period                date not null,
     tx_date               date not null,

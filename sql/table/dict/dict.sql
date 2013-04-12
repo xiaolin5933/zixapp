@@ -201,4 +201,4 @@ insert into dict(class, key, val) values
 ( 'yspz_0010',  'yhys_bfee', '已核应收银行手续费借方汇总' ),
 ( 'yspz_0010',  'yhyf_txamt', '已核应付交易款贷方汇总' ),
 ( 'yspz_0010',  'yhyf_bamt', '已核应付银行款贷方汇总' ),
-( 'yspz_0010',  'yhyf_bfee', '已核应付银行手续费贷方汇总' )
+( 'yspz_0010',  'yhyf_bfee', '已核应付银行手续费贷方汇总' );
