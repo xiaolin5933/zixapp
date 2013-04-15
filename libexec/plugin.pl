@@ -5,6 +5,14 @@ use Carp;
 use Zeta::Run;
 use DBI;
 
+use constant {
+    DEBUG => $ENV{ZAPP_DEBUG} || 0,
+};
+
+BEGIN {
+    require Data::Dump if DEBUG;
+}
+
 #
 # 父进程加载插件
 #
@@ -17,7 +25,7 @@ helper zapp_dbh    => sub {
     # 获取配置
     my $cfg = zkernel->zapp_config();
 
-    warn "zapp_config:\n" . Data::Dump->dump($cfg) if $ENV{ZAPP_DEBUG};
+    warn "zapp_config:\n" . Data::Dump->dump($cfg) if DEBUG;
 
     # 连接数据库
     my $dbh = DBI->connect(

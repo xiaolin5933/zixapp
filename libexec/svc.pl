@@ -8,6 +8,15 @@ use Carp;
 use POE;
 use ZAPP::Service;
 
+use constant{
+    DEBUG => $ENV{ZAPP_DEBUG} || 0,
+};
+
+
+BEGIN {
+    require Data::Dump if DEBUG;
+}
+
 sub {
 
     # 获取配置

@@ -7,6 +7,14 @@ use DBI;
 use Carp;
 use Zark::Proc;
 
+use constant {
+    DEBUG => $ENV{ZAPP_DEBUG} || 0,
+};
+
+BEGIN {
+    require Data::Dump if DEBUG;
+}
+
 sub {
 
     # 全局配置
@@ -21,7 +29,7 @@ sub {
        proc => $cfg->{proc} 
     ) or confess "can not Zark::Proc->new";
 
-    warn "Zark::Proc:\n"  . Data::Dump->dump($proc) if $ENV{ZAPP_DEBUG};
+    warn "Zark::Proc:\n"  . Data::Dump->dump($proc) if DEBUG;
 
     # 构建stomp客户端
     my $stomp = Net::Stomp->new( 
@@ -48,7 +56,7 @@ sub {
     while (1) {
 
          my $frame = $stomp->receive_frame;
-         zlogger->debug("recv frame:\n" . Data::Dump->dump($frame)) if $ENV{ZAPP_DEBUG};
+         zlogger->debug("recv frame:\n" . Data::Dump->dump($frame)) if DEBUG;
 
          # 反序列化获取原始配置
          my $src = $ser->deserialize($frame->body);  
@@ -57,7 +65,7 @@ sub {
              $stomp->ack( { frame => $frame } );
              next;
          }
-         zlogger->debug("recv src:\n" . Data::Dump->dump($src)) if $ENV{ZAPP_DEBUG};
+         zlogger->debug("recv src:\n" . Data::Dump->dump($src)) if DEBUG;
 
          # 凭证处理
          unless($proc->handle($src)) {

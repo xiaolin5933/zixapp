@@ -6,6 +6,14 @@ use Zeta::IPC::MsgQ;
 use POE;
 use Zeta::POE::HTTPD;
 
+use constant {
+    DEBUG => $ENV{ZAPP_DEBUG} || 0,
+};
+
+BEGIN {
+    require Data::Dump if DEBUG;
+}
+
 sub {
     my $cfg = zkernel->zapp_config()->{main};
     Zeta::POE::HTTPD->spawn(
