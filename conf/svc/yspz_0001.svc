@@ -47,9 +47,7 @@ sub {
     my $src = $req->{data};
     $src->{zjbd_type} = -3;
     $src->{period}    = $src->{zjbd_date_out};
-    use URI::Escape;
-    use Encode;
-    $src->{memo}      = uri_unescape($src->{memo});
+    $src->{status}    = '0';
 
     #
     $src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );

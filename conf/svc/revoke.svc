@@ -41,16 +41,14 @@ sub {
     # 撤销逻辑
     ### 
     require DateTime;
-    use URI::Escape;
-    use Encode;
     #
     my $dt = DateTime->now(time_zone => 'local');
     my $period       = $req->{data}->{period};
     my $ys_type      = $req->{data}->{ys_type};
     my $ys_id        = $req->{data}->{ys_id};
     my $revoke_user  = $req->{data}->{rk_user};
-    my $revoke_cause = uri_unescape($req->{data}->{revoke_cause});
     my $ts_revoke    = $dt->ymd('-') . ' ' . $dt->hms(':');
+    my $revoke_cause = $req->{data}->{revoke_cause};
     # 查询指定原始凭证类型与原始凭证id的记账凭证
     my $jzpzs = $svc->jzpz_sel($period, $ys_type, $ys_id);
     foreach my $jzpz(@$jzpzs)    {

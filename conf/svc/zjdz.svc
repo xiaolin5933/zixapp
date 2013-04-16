@@ -109,6 +109,7 @@ sub {
                     yhyf_bamt           => 0,
                     yhyf_bfee           => $yhyf_bfee,
                     bfj_bsc             => abs($ch_real - $ch), 
+                    status              => '0',
                 };
                 push @sources, $source;
             }
@@ -129,6 +130,7 @@ sub {
                     yhyf_bamt           => 0,
                     yhyf_bfee           => $yhyf_bfee,
                     bfj_blc             => abs($ch_real - $ch), 
+                    status              => '0',
 
                 };
                 push @sources, $source;
@@ -150,6 +152,7 @@ sub {
                         yhyf_txamt          => $yhyf_txamt,
                         yhyf_bamt           => 0,
                         yhyf_bfee           => $yhyf_bfee,
+                        status              => '0',
                     };
                     push @sources, $source;
                 }

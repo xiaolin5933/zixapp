@@ -45,10 +45,8 @@ sub {
     my $src = $req->{data};
     $src->{zjbd_type}   = -1;
     $src->{wlzj_type}   = 2;
-    $src->{period}   = $src->{zjbd_date_in};
-    use URI::Escape;
-    use Encode;
-    $src->{memo}     = uri_unescape( $src->{memo} );
+    $src->{period}      = $src->{zjbd_date_in};
+    $src->{status}      = '0';
     #
     $src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
     $svc->commit;

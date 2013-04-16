@@ -67,9 +67,7 @@ sub {
     $src->{p}           = 3;
     $src->{tx_date}     = $src->{zjbd_date_out};
     $src->{cwwf_bfee}   = 30;  # ?  暂时写死的, 并且原始凭证0009， 0002， 0003 与 账薄 定期划付客户手续费 cust_proto 应该为char型
-    use URI::Escape;
-    use Encode;
-    $src->{memo}        = uri_unescape( $src->{memo} );
+    $src->{status}      = '0';
     #
     #$src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
     #$svc->commit;

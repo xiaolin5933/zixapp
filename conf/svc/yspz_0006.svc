@@ -46,7 +46,7 @@ sub {
     my @sources;
     for my $ys( @{ $req->{data}->{data} } ) {
         Data::Dump->dump($ys);
-        $yspz4 = $svc->sel_0004($ys->{period}, $ys->{id});
+        $yspz4 = $svc->yspz_sel_0004($ys->{period}, $ys->{id});
         $src = {
             _type       => '0006',
             ssn         => $yspz4->{ssn},
@@ -57,12 +57,11 @@ sub {
             tx_date     => $yspz4->{tx_date},
             tx_amt      => $yspz4->{tx_amt},
             bfee        => $yspz4->{bfj_bfee} + $yspz4->{cwwf_bfee},
+            status      => '0',
         };
         if ( $ys->{clfs} == 1 ) {
             $src->{yqr_c} = $ys->{yqr_c};
-            use URI::Escape;
-            use Encode;
-            $src->{memo}  = uri_unescape( $ys->{memo} );
+            $src->{memo}  = $ys->{memo};
             
         }
         push @sources, $src;
