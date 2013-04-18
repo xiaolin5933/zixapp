@@ -8,7 +8,7 @@ create table book_cfee_dqhf (
 
     -- 核算项字段(核算项按名称排序)
     c                     char(32) not null,
-    cust_proto            integer not null,
+    cust_proto            char(32) not null,
     period                date not null,
     tx_date               date not null,
   

@@ -73,6 +73,9 @@ sub {
              $stomp->ack( { frame => $frame } );
              next;
          }
+         # 设置凭证处理状态为成功 1
+         $proc->yspz_upd($src->{_type}, '1', $src->{period}, $src->{id});
+         $proc->commit;
 
          $stomp->ack( { frame => $frame } );
     }

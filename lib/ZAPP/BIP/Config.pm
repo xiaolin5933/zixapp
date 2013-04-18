@@ -145,9 +145,11 @@ sub _init {
             }
         }
     }
-    for (keys %$dept_bi) {
-        my $db_id = delete $dept_bi->{$_}->{id};
-        $dept_bi->{$_}{matcher} = $dfg->{$db_id};
+    for my $dept_id (keys %$dept_bi) {
+        for my $dept_bi_id (keys %{$dept_bi->{$dept_id}}) {
+            my $db_id = delete $dept_bi->{$dept_id}{$dept_bi_id}{id};
+            $dept_bi->{$dept_id}{$dept_bi_id}{matcher} = $dfg->{$db_id};
+        }
     }
     Data::Dump->dump($dept_bi) if DEBUG;
 
@@ -173,17 +175,15 @@ sub inst {
     my ($self, $dept_id, $dept_bi) = @_;
     my $config = $self->{config};
 
-    my $key = $dept_id . '.' . $dept_bi;
-    my $bi  = $config->{dept}->{$key}->{bi};   # 银行接口编号;
-
+    my $bi = $config->{dept}{$dept_id}{$dept_bi}->{bi};      # 银行接口编号; 
     return ZAPP::BIP::Inst->new(
-        dbh    => $self->{dbh},
-        dt     => $self->{dt},
+        dbh      => $self->{dbh},
+        dt       => $self->{dt},
 
-        bi     => $bi,                              # 银行接口编号
-        proto  => $config->{bip}{$bi},              # 银行接口协议
-        acct   => $config->{acct},                  # 账号
-        matcher  => $config->{dept}{$key}{matcher}, # 规则组匹配
+        bi       => $bi,
+        proto    => $config->{bip}{$bi},                            # 银行接口协议;
+        acct     => $config->{acct},                                # 账号;
+        matcher  => $config->{dept}{$dept_id}{$dept_bi}->{matcher}, # 协议匹配;
     );
 }
 
@@ -207,7 +207,7 @@ EOF
     for ( @$all ) {
         my $dept_id = delete $_->{dept_id};
         my $dept_bi = delete $_->{dept_bi};
-        $data{ $dept_id . "." . $dept_bi } = {
+        $data{$dept_id}{$dept_bi} = {
             id => $_->{id},
             bi => $_->{bi},
         };

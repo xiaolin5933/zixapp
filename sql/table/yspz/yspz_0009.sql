@@ -14,7 +14,7 @@ create table yspz_0009 (
     bfj_acct_bj           integer not null,
     bi                    integer not null,
     p                     integer not null,
-    cust_proto            integer not null,
+    cust_proto            char(32) not null,
     c                     char(32) not null,
     period                date not null,
     tx_date               date not null,

@@ -1,38 +1,10 @@
 package ZAPP::BIP::Inst;
 use strict;
 use warnings;
+use ZAPP::BIP::Constant;
 use constant {
-
-    # 测试
-    DEBUG  =>  $ENV{ZAPP_BIP_INST_DEBUG} || 0,
-
-    # 账户类别
-    ACCT_TYPE_BFJ   => 1,   # 备付金账号
-    ACCT_TYPE_ZYZJ  => 2,   # 自有资金账号
-
-    # 手续费计算模式
-    MODE_RATIO  =>  1, # 按比列
-    MODE_QUOTA  =>  2, # 单笔定额
-
-    # 取整规则
-    ROUND_NORM  =>  1, # 四舍五入
-    ROUND_UP    =>  2, # 向上取整 
-    ROUND_DOWN  =>  3, # 向下取整
-
-    # 划付类型
-    FH_TYPE_F   =>  1, # 财务支付
-    FH_TYPE_NF  =>  2, # 非财务
-
-    # 划付周期
-    FH_PERIOD_DAY       => 1,
-    FH_PERIOD_WEEK      => 2,
-    FH_PERIOD_MONTH     => 3,
-    FH_PERIOD_QUARTER   => 4,
-    FH_PERIOD_SEMI_YEAR => 5,
-    FH_PERIOD_YEAR      => 6,
- 
-    # 缓存大小 
-    CACHE_SIZE  =>  3, # cache大小
+    DEBUG       =>  $ENV{ZAPP_BIP_INST_DEBUG} || 0,
+    CACHE_SIZE  =>  3, 
 };
 
 BEGIN {
@@ -109,7 +81,7 @@ sub calc {
     # 返回值
     my @output;
 
-    # 对于组中的没一个规则
+    # 对于组中的每一个规则, 返回一个结果[10项输出]
     for my $rule (@$group) {
         my $bfee = $self->_bfee($req, $proto, $rule);
         warn "不能计算手续费" and return unless defined $bfee;
@@ -141,27 +113,27 @@ sub _inout_date {
     my $dt;
 
     # 日
-    if ($hf->{period} == FH_PERIOD_DAY) {
+    if ($hf->{period} == HF_PERIOD_DAY) {
         $dt = $date;
     }
     # 周
-    elsif ($hf->{period} == FH_PERIOD_WEEK) {
-        $dt = $self->{dt}->week_last($dt)   # $dt所在周的最后一天
+    elsif ($hf->{period} == HF_PERIOD_WEEK) {
+        $dt = $self->{dt}->week_last($date)   # $dt所在周的最后一天
     }
     # 月
-    elsif ($hf->{period} == FH_PERIOD_MONTH) {
-        $dt = $self->{dt}->month_last($dt)  # $dt所在月的最后一天
+    elsif ($hf->{period} == HF_PERIOD_MONTH) {
+        $dt = $self->{dt}->month_last($date)  # $dt所在月的最后一天
     }
-    elsif ($hf->{period} == FH_PERIOD_QUARTER) {
-        $dt = $self->{dt}->quarter_last($dt)  # $dt所在季度的最后一天
+    elsif ($hf->{period} == HF_PERIOD_QUARTER) {
+        $dt = $self->{dt}->quarter_last($date)  # $dt所在季度的最后一天
     }
     # 半年
-    elsif ($hf->{period} == FH_PERIOD_SEMI_YEAR) {
-        $dt = $self->{dt}->semi_year_last($dt)  # $dt所在半年的最后一天
+    elsif ($hf->{period} == HF_PERIOD_SEMI_YEAR) {
+        $dt = $self->{dt}->semi_year_last($date)  # $dt所在半年的最后一天
     }
     # 年
-    elsif ($hf->{period} == FH_PERIOD_YEAR) {
-        $dt = $self->{dt}->year_last($dt)  # $dt所在年的最后一天
+    elsif ($hf->{period} == HF_PERIOD_YEAR) {
+        $dt = $self->{dt}->year_last($date)  # $dt所在年的最后一天
     }
     else {
         warn "ERROR: internal error";
@@ -287,33 +259,32 @@ sub _result {
     my ($self, $req, $proto, $rule, $bfee) = @_;
 
     # 本金相关
-    my $res = {
-        bj_acct  => $proto->{bjhf}->{acct},
-        bj_in    => $self->_inout_date($proto->{bjhf}, $req->{date}),
-        bi       => $self->{bi},
-    }; 
+    my @res;
+    $res[RES_BJ_ACCT] = $proto->{bjhf}->{acct};
+    $res[RES_BJ_IN]   = $self->_inout_date($proto->{bjhf}, $req->{date});
+    $res[RES_BI]      = $self->{bi};
 
     # 银行手续费划付信息
     my $hf = $rule->{hf};
-    if ( $hf->{type} == FH_TYPE_F) {     # 财务付款
-         $res->{bfee_cwwf} = $bfee;
+    if ( $hf->{type} == HF_TYPE_F) {     # 财务付款
+         $res[RES_BFEE_CWWF] = $bfee;
     }
-    elsif ($hf->{type} == FH_TYPE_NF) {  # 非财务付款
+    elsif ($hf->{type} == HF_TYPE_NF) {  # 非财务付款
         # 判断手续费划付账户类型: 自有资金 or 备付金
         if ( $self->{acct}->{$hf->{acct}}->{sub_type} == ACCT_TYPE_BFJ  ) {  # 手续费划付账号为备付金账号
 
             # 备付金划付银行账号 == 手续费划付账号 
             # 为备付金内扣
             if ( $proto->{bjhf}->{acct} == $hf->{acct} ) {
-                $res->{bfee_nk}      = $bfee;
-                $res->{bfee_nk_acct} = $hf->{acct};
-                $res->{bfee_nk_out}  = $self->_inout_date($hf, $req->{date});
+                $res[RES_BFEE_NK]      = $bfee;
+                $res[RES_BFEE_NK_ACCT] = $hf->{acct};
+                $res[RES_BFEE_NK_OUT]  = $self->_inout_date($hf, $req->{date});
             }
             # 备付金外扣
             else {
-                $res->{bfee_wk}      = $bfee;
-                $res->{bfee_wk_acct} = $hf->{acct};
-                $res->{bfee_wk_out}  = $self->_inout_date($hf, $req->{date});
+                $res[RES_BFEE_WK]      = $bfee;
+                $res[RES_BFEE_WK_ACCT] = $hf->{acct};
+                $res[RES_BFEE_WK_OUT]  = $self->_inout_date($hf, $req->{date});
             }
         }  
         else { # 自有资金 
@@ -326,7 +297,7 @@ sub _result {
         return;
     }
 
-    return $res;
+    return \@res;
 }
 
 
@@ -341,8 +312,15 @@ __END__
 #     输入:  1. 外部部门编号
 #            2. 外部部门银行接口编号 
 #
+#     输出:  1. 内部银行接口编号
+#
 #  2> 获取10项输出:
-#            本金部分:
+#     输入:  1. 外部部门编号
+#            2. 外部部门银行接口编号
+#            3. 清算日期
+#            4. 交易金额
+#
+#     输出:  本金部分:
 #            1. 本金备付金银行账号     bj_acct
 #            2. 本金入账日期           bj_in 
 #
@@ -362,9 +340,5 @@ __END__
 #            # 银行接口
 #            10. 银行接口编号           bi
 #  
-#     输入:  1. 外部部门编号
-#            2. 外部部门银行接口编号
-#            3. 清算日期
-#            4. 交易金额
 ##########################################################################
 
