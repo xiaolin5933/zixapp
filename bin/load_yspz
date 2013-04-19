@@ -20,7 +20,19 @@ my $rtn = GetOptions(
     "p|path=s"  => \$path,
     "d|date=s"  => \$date,
     "b|batch=s" => \$batch,
-) or die &useage;
+) or die &usage;
+
+unless ($path) {
+    die &usage;
+}
+
+unless ($date) {
+    die &usage;
+}
+
+unless ($batch) {
+    die &usage;
+}
 
 
 #
@@ -49,11 +61,8 @@ for my $file ( <$path/$date/*.src> ) {
     }
 }
 
-#$load->handle($file, $type);
-
-
-# 使用说明
 sub usage {
-    
+    "usage:  ./load_yspz -p $ENV{ZIXAPP_HOME}/tmp -d 20130302 -b 500";
 }
+
 

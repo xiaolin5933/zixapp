@@ -68,13 +68,14 @@ sub {
          zlogger->debug("recv src:\n" . Data::Dump->dump($src)) if DEBUG;
 
          # 凭证处理
-         unless($proc->handle($src)) {
+         my $source;
+         unless($source = $proc->handle($src)) {
              zlogger->error("can not handle src[" . $src . "]");
              $stomp->ack( { frame => $frame } );
              next;
          }
          # 设置凭证处理状态为成功 1
-         $proc->yspz_upd($src->{_type}, '1', $src->{period}, $src->{id});
+         $proc->yspz_upd($source->{_type}, '1', $source->{period}, $source->{id});
          $proc->commit;
 
          $stomp->ack( { frame => $frame } );
