@@ -1,0 +1,59 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Zeta::Run;
+use ZAPP::YSPZ::Load;
+use Getopt::Long;
+
+use constant DEBUG => 1;
+
+BEGIN {
+    require Data::Dump if DEBUG;
+}
+
+
+my $path;
+my $date;
+my $batch;
+
+my $rtn = GetOptions(
+    "p|path=s"  => \$path,
+    "d|date=s"  => \$date,
+    "b|batch=s" => \$batch,
+) or die &useage;
+
+
+#
+# 连接数据库
+#
+do "$ENV{ZIXAPP_HOME}/libexec/plugin.pl";
+my $dbh = zkernel->zapp_dbh();
+
+# 获取配置
+my $cfg = zkernel->zapp_config();
+
+
+# 构造凭证导入器
+my $loader = ZAPP::YSPZ::Load->new(
+    dbh   => $dbh,
+    proc  => $cfg->{proc},
+    load  => $cfg->{load},
+    batch => $batch,
+);
+
+for my $file ( <$path/$date/*.src> ) {
+    $file =~ /([^\/]+).src$/;
+    warn "load yspz_$1 ...";
+    unless ( $loader->handle($file, $1) ) {
+        next; 
+    }
+}
+
+#$load->handle($file, $type);
+
+
+# 使用说明
+sub usage {
+    
+}
+

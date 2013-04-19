@@ -1,40 +1,20 @@
 #!/usr/bin/perl
-use strict;
-use warnings;
-use Zeta::Run;
-use Zark;
-use Data::Dump;
-use ZAPP::BIP::Config;
-use ZAPP::BIP::Constant;
-use Zark;
-
-use constant DEBUG => 1;
-
-BEGIN {
-    require Data::Dump;
-}
 
 #
-# 连接数据库
-#
-do "$ENV{ZIXAPP_HOME}/libexec/plugin.pl";
-my $dbh = zkernel->zapp_dbh();
-
-#
-#
-#
-my $zark   = Zark->new(dbh => $dbh);
-my $config = ZAPP::BIP::Config->new( dbh => $dbh );
-my %inst;
-
-# {
-#     no strict 'refs';
-#     my $hash = \*{"Zark::"};
-#     Data::Dump->dump($hash);
-#     exit 0;
+# $self => {
+#   zark    => $zark,
+#   dbh     => $dbh,
+#   config  => $config,
+#   load    => \%load,
+#   batch   => $batch_size,
+#   inst    => $inst,
 # }
-while ( <> ) {
+#
+#
+sub {
 
+    my $self = shift;
+    use ZAPP::BIP::Constant;
     # 收款客户ID,支付记录编号,我方支付成功日期时间,支付金额,确认外收客户手续费金额总和,银行接口编号,银行支付记录编号 无数据,银行成功日期时间,银行清算日期,确认内扣银行手续费金额总和 无数据,确认外扣银行手续费金额总和 无数据,取数值为1（表示正常）的数据,记录生成日期
     # 20121114018|20130325_131129|2013-03-25 21:44:10.000000|2000.00|11.92|104||2013-03-25 21:44:10.000000|2013-03-25 00:00:00.000000||1.00|1|2013-03-26 10:42:28.000000
     #  文件记录
@@ -63,11 +43,10 @@ while ( <> ) {
     $row->[4]  =~ s/\.//;
     $row->[4] ||= 0;
 
-    warn "date is $date";
-    warn "process row:\n" .  Data::Dump->dump($row) if DEBUG;
 
+    my $config  = $self->{config};
     my $key = '51.' . $row->[5];
-    my $inst = ($inst{$key} ||= $config->inst(51, $row->[5]));
+    my $inst = ($self->{inst}->{$key} ||= $config->inst(51, $row->[5]));
 
     # 获取10项输出数组第一个数组
     my $res = $inst->calc( { amt  => $row->[3], date => $date, })->[0];
@@ -119,34 +98,27 @@ while ( <> ) {
     #  外扣客户手续费           :  f14: wk_cfee
 
 
-    $zark->yspz_ins_0002(
-        '0',                        # 处理状态:  status
-        
-        $row->[1],                  # f0:  ssn
-        $res->[RES_BJ_ACCT],        # f1:  bfj_acct_bj 
-        $bfj_acct_bfee,             # f2:  bfj_acct_bfee
-        $res->[RES_BI],             # f3:  bi
-        1,                          # f4:  p
-        "1_" . $row->[0],           # f5:  cust_proto
-        '51.' . $row->[0],          # f6:  c
-        $date,                      # f7:  period
-        $date,                      # f8:  tx_date
-        $zjbd_date_out,             # f9:  zjbd_date_out
-        $res->[RES_BJ_IN],          # f10: zjbd_date_in
-        $row->[3],                  # f11: tx_amt
-        $bfj_bfee,                  # f12: bfj_bfee
-        $res->[RES_BFEE_CWWF] || 0,      # f13: cwwf_bfee
-        $row->[4],                  # f14: wk_cfee
+    {
+        _type                   => '0002',
+        status                  => 0,
 
-        undef,                      # 备注:      memo
-    );
+        ssn                     => $row->[1],
+        bfj_acct_bj             => $res->[RES_BJ_ACCT],
+        bfj_acct_bfee           => $bfj_acct_bfee,
+        bi                      => $res->[RES_BI],
+        p                       => 1, 
+        cust_proto              => "1_" . $row->[0],
+        c                       => '51.' . $row->[0],
+        period                  => $date,
+        tx_date                 => $date,
+        zjbd_date_out           => $zjbd_date_out,
+        zjbd_date_in            => $res->[RES_BJ_IN],
+        tx_amt                  => $row->[3],
+        bfj_bfee                => $bfj_bfee,
+        cwwf_bfee               => $res->[RES_BFEE_CWWF] || 0,
+        wk_cfee                 => $row->[4],
+    };
 }
-$dbh->commit();
-$zark->dtor();
-$dbh->rollback();
-$dbh->disconnect();
-
-exit 0;
 
 __END__
 
