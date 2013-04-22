@@ -39,7 +39,7 @@ sub {
     my $serializer  = $cfg->{serializer};
     my $stpcfg      = $cfg->{stomp};
     
-    my %ret = {
+    my $ret = {
         status => -1,
         errmsg => '',
         ret    => ''

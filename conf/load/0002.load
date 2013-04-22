@@ -35,13 +35,13 @@ sub {
     
 
     chomp;
-    my $row = [ split '\|', $_ ];
-    $row->[2]  =~ /(\d{4}-\d{2}-\d{2})/;
-    my $date = $1;
-    $row->[3]  =~ s/\.//;
-    $row->[3] ||= 0;
-    $row->[4]  =~ s/\.//;
-    $row->[4] ||= 0;
+    my $row     = [ split '\|', $_ ];
+    $row->[2]   =~ /(\d{4}-\d{2}-\d{2})/;
+    my $date    = $1;
+    $row->[3]   =~ s/\.//;
+    $row->[3]  ||= 0;
+    $row->[4]   =~ s/\.//;
+    $row->[4]  ||= 0;
 
 
     my $config  = $self->{config};
@@ -74,6 +74,9 @@ sub {
     if ($res->[RES_BFEE_WK_OUT]) {
         $zjbd_date_out  = $res->[RES_BFEE_WK_OUT];
     }
+
+    $bfj_bfee       ||= 0;
+    $bfj_acct_bfee  ||= 0;
     
     # warn "got bip result:[@$res]";
 

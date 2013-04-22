@@ -67,6 +67,9 @@ sub {
     if ($res->[RES_BFEE_WK_OUT]) {
         $zjbd_date_out  = $res->[RES_BFEE_WK_OUT];
     }
+    
+    $bfj_bfee       ||= 0;
+    $bfj_acct_bfee  ||= 0;
 
     #
     #  插入0004原始凭证

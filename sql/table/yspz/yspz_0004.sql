@@ -18,7 +18,7 @@ create table yspz_0004 (
     wqr_c                 char(32) not null,
     period                date not null,
     tx_date               date not null,
-    zjbd_date_out         date not null,
+    zjbd_date_out         date,
     zjbd_date_in          date not null,
     tx_amt                bigint not null,
     bfj_bfee              bigint not null,

@@ -72,7 +72,7 @@ sub handle {
         # 生成原始凭证
         my $yspz = $self->{load}->{$type}->($self, $_);  
         unless($yspz) {
-            warn sprintf("非法数据行: file[$file] line[%6d] batch[%10d] index[%3d]", $line, $rotation, $size);
+            warn sprintf("非法数据行: file[$file] line[%06d] batch[%010d] index[%03d]", $line, $rotation, $size);
             next;
         }
 
@@ -89,7 +89,7 @@ sub handle {
 
         };
         if ($@) {
-            warn sprintf("不能处理原始凭证: file[$file] line[%6d] batch[%10d] index[%3d] errmsg[$@]", $line, $rotation, $size);
+            warn sprintf("不能处理原始凭证: file[$file] line[%06d] batch[%010d] index[%03d] errmsg[$@]", $line, $rotation, $size);
             $self->{dbh}->rollback();
 
             # 重置批次:
@@ -103,9 +103,9 @@ sub handle {
 
         # 批次完成， 提交批次
         if ($size == $self->{batch}) {
-            warn sprintf("开始提交第[%10d]批, 批大小[%3d], file[$file] line[%6d]", $rotation, $self->{batch}, $line);
+            warn sprintf("开始提交第[%010d]批, 批大小[%03d], file[$file] line[%06d]", $rotation, $self->{batch}, $line);
             unless($self->{dbh}->commit()) {
-                my $errmsg = sprintf("批提交失败，批次号[%10d],批大小[%3d], file[$file] line[%6d]", $rotation, $self->{batch}, $line);
+                my $errmsg = sprintf("批提交失败，批次号[%010d],批大小[%03d], file[$file] line[%06d]", $rotation, $self->{batch}, $line);
                 warn $errmsg;
                 confess $errmsg;
             }
@@ -117,9 +117,9 @@ sub handle {
  
     # 最后一个批次
     if ( $size ) {
-        warn sprintf("开始提交第[%10d]批, 批大小[%3d], file[$file] line[%6d] -- 最后一批", $rotation, $size, $line);
+        warn sprintf("开始提交第[%010d]批, 批大小[%03d], file[$file] line[%06d] -- 最后一批", $rotation, $size, $line);
         unless ($self->{dbh}->commit()) {
-            my $errmsg = sprintf("批提交失败，批次号[%10d],批大小[%3d], file[$file] line[%6d]", $rotation, $self->{batch}, $line);
+            my $errmsg = sprintf("批提交失败，批次号[%010d],批大小[%03d], file[$file] line[%06d]", $rotation, $self->{batch}, $line);
             warn $errmsg;
             confess $errmsg;
         }
