@@ -17,6 +17,7 @@
 #       ssn             => "ssn123",
 #       tx_amt          => 244,
 #       wk_cfee         => 123,
+#       period          => "2013-04-02",
 #       zjbd_date_out   => "2013-04-02",
 #   },
 #   svc  => "yspz_0009",
@@ -47,32 +48,30 @@ sub {
 
     my $src = $req->{data};
 
-    # 获取指定bi的协议
-    my $bips = $svc->{bip_cfg}->{config}->{bip}->{$src->{bi}};
+    my $sth = $dbh->prepare("select dept_bi from dept_bi where dept_id = ? and bi = ?");
+    $sth->execute(51, $src->{bi});
+    my ($dept_bi) = $sth->fetchrow_array() or return $ret;
 
-    # 获取指定有效期的银行协议
-    my $date = '2013-04-01';
-    my $bip;
-    for my $b(@$bips) {
-        if ( $date ge $b->{begin} && $date le $b->{end} ) {
-            $bip = $b;
-            last;
-        }
-    }
+    # 获取10项输出数组第一个数组
+    my $config  = $svc->{bip_cfg};
+    my $inst = $config->inst(51, $dept_bi);
+    my $res = $inst->calc( { amt  => $src->{tx_amt}, date => $src->{zjbd_date_out} })->[0];
 
 
+
+    use ZAPP::BIP::Constant;
     # 本金备付金帐号，通过银行接口中的银行协议获取
-    $src->{bfj_acct_bj} = $bip->{bjhf}->{acct};
+    $src->{bfj_acct_bj} = $res->[RES_BJ_ACCT];
     $src->{period}      = $src->{zjbd_date_out};
     $src->{p}           = 3;
     $src->{tx_date}     = $src->{zjbd_date_out};
-    $src->{cwwf_bfee}   = 30;  # ?  暂时写死的, 并且原始凭证0009， 0002， 0003 与 账薄 定期划付客户手续费 cust_proto 应该为char型
+    $src->{cwwf_bfee}   = $res->[RES_BFEE_CWWF] || 0; 
     $src->{status}      = '0';
     #
-    #$src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
-    #$svc->commit;
+    $src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
+    $svc->commit;
     # send
-    #$stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+    $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
 
     $ret->{status} = 0;
     
