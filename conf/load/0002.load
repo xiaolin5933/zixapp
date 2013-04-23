@@ -35,13 +35,15 @@ sub {
     
 
     chomp;
-    my $row     = [ split '\|', $_ ];
-    $row->[2]   =~ /(\d{4}-\d{2}-\d{2})/;
-    my $date    = $1;
-    $row->[3]   =~ s/\.//;
-    $row->[3]  ||= 0;
-    $row->[4]   =~ s/\.//;
-    $row->[4]  ||= 0;
+    my $row         = [ split '\|', $_ ];
+    $row->[2]       =~ /(\d{4}-\d{2}-\d{2})/;
+    my $date        = $1;
+    $row->[8]       =~ /(\d{4}-\d{2}-\d{2})/;
+    my $clear_date  = $1;
+    $row->[3]       =~ s/\.//;
+    $row->[3]       ||= 0;
+    $row->[4]       =~ s/\.//;
+    $row->[4]       ||= 0;
 
 
     my $config  = $self->{config};
@@ -49,7 +51,7 @@ sub {
     my $inst = ($self->{inst}->{$key} ||= $config->inst(51, $row->[5]));
 
     # 获取10项输出数组第一个数组
-    my $res = $inst->calc( { amt  => $row->[3], date => $date, })->[0];
+    my $res = $inst->calc( { amt  => $row->[3], date => $clear_date, })->[0];
     # bfj_bfee, bfj_acct_bfee, zjbd_date_out
     my $bfj_bfee        = 0;
     my $bfj_acct_bfee;
