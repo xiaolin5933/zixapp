@@ -22,8 +22,16 @@ sub {
     # 获取配置
     my $cfg = zkernel->zapp_config();
 
-    # 获取数据库连接
+    # 连接数据库
     my $dbh = zkernel->zapp_dbh();
+
+    # 重置zark的dbh
+    my $zark = $cfg->{zark};
+    $zark->reset_dbh($dbh);
+
+    # 重置bip的dbh
+    my $bip = $cfg->{bip};
+    $bip->reset_dbh($dbh);
 
     # 连接stomp
     my $stp = Net::Stomp->new( 
@@ -40,10 +48,12 @@ sub {
         port   => $cfg->{service}->{port},
         module => 'ZAPP::Service',
         para   => [
-            'dbh'      => $dbh,
-            'stomp'    => $stp,
-            'svc'      => $cfg->{svc},
-            'cfg'      => $cfg,
+            'dbh'   => $dbh,
+            'zark'  => $zark,
+            'bip'   => $bip,
+            'stomp' => $stp,
+            'svc'   => $cfg->{svc},
+            'cfg'   => $cfg,
         ]
     ) or confess "can not ZAPP::Service->new";
 

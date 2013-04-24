@@ -3,6 +3,8 @@
 #
 # $svc对象:  {
 #     dbh        => $dbh
+#     zark       => $zark
+#     bip        => $bip,
 #     stomp      => $stomp,
 #     cfg        => $cfg,
 # }
@@ -46,7 +48,7 @@ sub {
     my @sources;
     for my $ys( @{ $req->{data}->{data} } ) {
         Data::Dump->dump($ys);
-        $yspz4 = $svc->yspz_sel_0004($ys->{period}, $ys->{id});
+        $yspz4 = $svc->{zark}->yspz_sel_0004($ys->{period}, $ys->{id});
         $src = {
             _type       => '0006',
             ssn         => $yspz4->{ssn},
@@ -74,8 +76,8 @@ sub {
             next;
         }
         #
-        $src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
-        $svc->commit;
+        $src->{id} = $svc->{zark}->yspz_ins( $src->{_type}, @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} );
+        $svc->{zark}->commit;
         # send
         $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
     }

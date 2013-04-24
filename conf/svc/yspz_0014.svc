@@ -3,6 +3,8 @@
 #
 # $svc对象:  {
 #     dbh        => $dbh
+#     zark       => $zark
+#     bip        => $bip,
 #     stomp      => $stomp,
 #     cfg        => $cfg,
 # }
@@ -48,8 +50,8 @@ sub {
     $src->{period}      = $src->{zjbd_date_in};
     $src->{status}      = '0';
     #
-    $src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
-    $svc->commit;
+    $src->{id} = $svc->{zark}->yspz_ins( $src->{_type}, @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} );
+    $svc->{zark}->commit;
     # send
     $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
 

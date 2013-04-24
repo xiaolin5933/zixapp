@@ -4,6 +4,7 @@ use warnings;
 use Carp;
 use Zeta::Run;
 use DBI;
+use ZAPP::BIP::Config;
 
 use constant {
     DEBUG => $ENV{ZAPP_DEBUG} || 0,
@@ -49,14 +50,14 @@ helper zapp_dbh    => sub {
     return $dbh;
 };
 
-#helper zapp_proc    => sub {
-#	# 构建proc对象
-#    my $proc = Zark::Proc->new(
-#        $dbh,
-#        proc => $cfg->{proc}
-#    ) or confess "can not Zark::Proc->new";	
-#}
-
+#
+# 增加配置...
+#
+$cfg->{zark} = Zark->new(
+    dbh  => zkernel->zapp_dbh, 
+    proc => delete $cfg->{proc}
+);
+$cfg->{bip}  = ZAPP::BIP::Config->new(dbh => zkernel->zapp_dbh);
 
 1;
 

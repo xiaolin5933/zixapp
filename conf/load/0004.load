@@ -99,7 +99,7 @@ sub {
         bfj_acct_bfee       => $bfj_acct_bfee,
         bi                  => $res->[RES_BI],
         p                   => 1, 
-        wqr_c               => -1,
+        wqr_c               => -51,
         period              => $date,
         tx_date             => $date,
         zjbd_date_out       => $zjbd_date_out,

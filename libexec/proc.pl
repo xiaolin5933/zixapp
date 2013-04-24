@@ -23,13 +23,9 @@ sub {
     # 连接数据库
     my $dbh = zkernel->zapp_dbh();
 
-    # 构建proc对象
-    my $proc = Zark::Proc->new(
-       dbh => $dbh, 
-       proc => $cfg->{proc} 
-    ) or confess "can not Zark::Proc->new";
-
-    warn "Zark::Proc:\n"  . Data::Dump->dump($proc) if DEBUG;
+    # 重置dbh
+    my $zark = $cfg->{zark};
+    $zark->reset_dbh(zkernel->zapp_dbh());
 
     # 构建stomp客户端
     my $stomp = Net::Stomp->new( 
@@ -69,14 +65,14 @@ sub {
 
          # 凭证处理
          my $source;
-         unless($source = $proc->handle($src)) {
+         unless($source = $zark->handle($src)) {
              zlogger->error("can not handle src[" . $src . "]");
              $stomp->ack( { frame => $frame } );
              next;
          }
          # 设置凭证处理状态为成功 1
-         $proc->yspz_upd($source->{_type}, '1', $source->{period}, $source->{id});
-         $proc->commit;
+         $zark->yspz_upd($source->{_type}, '1', $source->{period}, $source->{id});
+         $zark->commit;
 
          $stomp->ack( { frame => $frame } );
     }

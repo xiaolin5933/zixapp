@@ -6,6 +6,8 @@
 #
 # $svc对象:  {
 #     dbh        => $dbh
+#     zark       => $zark
+#     bip        => $bip,
 #     stomp      => $stomp,
 #     cfg        => $cfg,
 # }
@@ -50,11 +52,11 @@ sub {
     my $ts_revoke    = $dt->ymd('-') . ' ' . $dt->hms(':');
     my $revoke_cause = $req->{data}->{revoke_cause};
     # 查询指定原始凭证类型与原始凭证id的记账凭证
-    my $jzpzs = $svc->jzpz_sel($period, $ys_type, $ys_id);
+    my $jzpzs = $svc->{zark}->jzpz_sel($period, $ys_type, $ys_id);
     foreach my $jzpz(@$jzpzs)    {
         ## 老账薄表
-        my $j =    $svc->book_sel($jzpz->{jb_id}, $period, $jzpz->{j_id});
-        my $d =    $svc->book_sel($jzpz->{db_id}, $period, $jzpz->{d_id});
+        my $j =    $svc->{zark}->book_sel($jzpz->{jb_id}, $period, $jzpz->{j_id});
+        my $d =    $svc->{zark}->book_sel($jzpz->{db_id}, $period, $jzpz->{d_id});
         if ($j->{j} <= 0) {
             return;
         }
@@ -66,18 +68,18 @@ sub {
         $d->{d} = -($d->{d});
         # 插入分录: 借方记录, 贷方记录, 记账凭证
         my @ys      = ($ys_type, $ys_id);
-        my $jzpz_id = $svc->jzpz_id();
+        my $jzpz_id = $svc->{zark}->jzpz_id();
         my @misc    = (@ys, $jzpz_id);
 
-        my $j_id  = $svc->book_insert($jzpz->{jb_id}, @{$j}{@{$svc->book_flist($jzpz->{jb_id})}}, $j->{j}, 0,    @misc);
-        my $d_id  = $svc->book_insert($jzpz->{db_id}, @{$d}{@{$svc->book_flist($jzpz->{db_id})}}, 0,    $d->{d}, @misc);
-        $svc->jzpz($jzpz_id, $j_id, $d_id, $jzpz->{jb_id}, $jzpz->{db_id}, @ys, $jzpz->{fid}, $period);
+        my $j_id  = $svc->{zark}->book_insert($jzpz->{jb_id}, @{$j}{@{$svc->{zark}->book_flist($jzpz->{jb_id})}}, $j->{j}, 0,    @misc);
+        my $d_id  = $svc->{zark}->book_insert($jzpz->{db_id}, @{$d}{@{$svc->{zark}->book_flist($jzpz->{db_id})}}, 0,    $d->{d}, @misc);
+        $svc->{zark}->jzpz($jzpz_id, $j_id, $d_id, $jzpz->{jb_id}, $jzpz->{db_id}, @ys, $jzpz->{fid}, $period);
 
     }
     # 通过原始凭证会计期间与id，更新原始凭证的 撤销状态,撤销原因,撤销用户,撤销时间
-    $svc->yspz_upd_rk($ys_type, $revoke_cause, $revoke_user, $ts_revoke, $period, $ys_id);
+    $svc->{zark}->yspz_upd_rk($ys_type, $revoke_cause, $revoke_user, $ts_revoke, $period, $ys_id);
 
-    $svc->commit;
+    $svc->{zark}->commit;
 
     # 执行成功
     $ret->{status} = 0;

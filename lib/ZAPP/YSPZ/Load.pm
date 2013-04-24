@@ -2,7 +2,7 @@ package ZAPP::YSPZ::Load;
 use strict;
 use warnings;
 use Zark::Constant;
-use Zark::Proc;
+use Zark;
 
 use ZAPP::BIP::Config;
 
@@ -19,7 +19,8 @@ BEGIN {
 # 参数:
 # (
 #     dbh   => $dbh,
-#     proc  => \%proc,    # 凭证处理配置
+#     zark  => $zark,
+#     bip   => $bip,
 #     batch => $batch_size,
 #     load  => \%load,    # 导入凭证配置
 # )
@@ -36,13 +37,11 @@ BEGIN {
 sub new {
     my $self   = bless { }, shift;
     my $args   = { @_ };
-    my $config = ZAPP::BIP::Config->new( dbh => $args->{dbh} );
-    my $zark   = Zark::Proc->new( dbh => $args->{dbh}, proc => $args->{proc} );
 
     $self->{dbh}    = $args->{dbh};
-    $self->{zark}   = $zark;
+    $self->{zark}   = $args->{zark};
     $self->{batch}  = $args->{batch};
-    $self->{config} = $config;
+    $self->{config} = $args->{bip};
     $self->{load}   = $args->{load};
     return $self;
 }

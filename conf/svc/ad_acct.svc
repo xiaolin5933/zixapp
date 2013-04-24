@@ -3,6 +3,8 @@
 #
 # $svc对象:  {
 #     dbh        => $dbh
+#     zark       => $zark
+#     bip        => $bip,
 #     stomp      => $stomp,
 #     cfg        => $cfg,
 # }

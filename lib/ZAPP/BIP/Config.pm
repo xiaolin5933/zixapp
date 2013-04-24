@@ -169,6 +169,15 @@ sub _init {
 }
 
 #
+#
+#
+sub reset_dbh {
+    my $self = shift;
+    $self->{dbh} = shift;
+    return $self;
+}
+
+#
 # my $inst = $self->( $部门id, $部门接口);
 #
 sub inst {

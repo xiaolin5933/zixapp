@@ -3,6 +3,8 @@
 #
 # $svc对象:  {
 #     dbh        => $dbh
+#     zark       => $zark
+#     bip        => $bip,
 #     stomp      => $stomp,
 #     cfg        => $cfg,
 # }
@@ -53,13 +55,14 @@ sub {
     my ($dept_bi) = $sth->fetchrow_array() or return $ret;
 
     # 获取10项输出数组第一个数组
-    my $config  = $svc->{bip_cfg};
+    my $config  = $svc->{bip};
     my $inst = $config->inst(51, $dept_bi);
     my $res = $inst->calc( { amt  => $src->{tx_amt}, date => $src->{zjbd_date_out} })->[0];
 
 
 
     use ZAPP::BIP::Constant;
+    my $c = $src->{c};
     # 本金备付金帐号，通过银行接口中的银行协议获取
     $src->{bfj_acct_bj} = $res->[RES_BJ_ACCT];
     $src->{period}      = $src->{zjbd_date_out};
@@ -67,9 +70,11 @@ sub {
     $src->{tx_date}     = $src->{zjbd_date_out};
     $src->{cwwf_bfee}   = $res->[RES_BFEE_CWWF] || 0; 
     $src->{status}      = '0';
+    $src->{c}           = '51.' . $c;
+    $src->{cust_proto}  = '3_'  . $c;
     #
-    $src->{id} = $svc->yspz_ins( $src->{_type}, @{$src}{@{$svc->yspz_flist($src->{_type})}} );
-    $svc->commit;
+    $src->{id} = $svc->{zark}->yspz_ins( $src->{_type}, @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} );
+    $svc->{zark}->commit;
     # send
     $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
 

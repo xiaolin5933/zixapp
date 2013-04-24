@@ -39,18 +39,20 @@ unless ($batch) {
 # 连接数据库
 #
 do "$ENV{ZIXAPP_HOME}/libexec/plugin.pl";
-my $dbh = zkernel->zapp_dbh();
 
 # 获取配置
 my $cfg = zkernel->zapp_config();
+my $dbh = $cfg->{zark}->{dbh};
+
 
 
 # 构造凭证导入器
 my $loader = ZAPP::YSPZ::Load->new(
-    dbh   => $dbh,
-    proc  => $cfg->{proc},
-    load  => $cfg->{load},
-    batch => $batch,
+    dbh     => $dbh,
+    load    => $cfg->{load},
+    batch   => $batch,
+    zark    => $cfg->{zark},
+    bip     => $cfg->{bip},
 );
 
 for my $file ( <$path/$date/*.src> ) {
