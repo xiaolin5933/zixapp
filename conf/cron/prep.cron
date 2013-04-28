@@ -1,1 +1,2 @@
-10 0 0 * * /home/dafafafa/libexec/cron.pl -t prep
+# m h  dom mon dow   command
+10 *  *   *   *     . $HOME/workspace/zixapp/etc/profile.cain; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t prep 20130325 >> $ZIXAPP_HOME/log/cron.log  2>&1

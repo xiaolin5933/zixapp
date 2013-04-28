@@ -1,5 +1,6 @@
-0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0002
-0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0003
-0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0004
-0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0007
-0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0009
+# m h  dom mon dow   command
+10 *  *   *   *     . $HOME/workspace/zixapp/etc/profile.cain; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t 0002 >> $ZIXAPP_HOME/log/cron.log  2>&1
+20 *  *   *   *     . $HOME/workspace/zixapp/etc/profile.cain; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t 0003 >> $ZIXAPP_HOME/log/cron.log  2>&1
+20 *  *   *   *     . $HOME/workspace/zixapp/etc/profile.cain; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t 0004 >> $ZIXAPP_HOME/log/cron.log  2>&1
+20 *  *   *   *     . $HOME/workspace/zixapp/etc/profile.cain; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t 0007 >> $ZIXAPP_HOME/log/cron.log  2>&1
+20 *  *   *   *     . $HOME/workspace/zixapp/etc/profile.cain; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t 0009 >> $ZIXAPP_HOME/log/cron.log  2>&1
