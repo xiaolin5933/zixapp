@@ -12,49 +12,29 @@ use constant{
     DEBUG => $ENV{ZAPP_DEBUG} || 0,
 };
 
-
 BEGIN {
     require Data::Dump if DEBUG;
 }
 
 sub {
+    # 重置dbh
+    zkernel->zapp_setup();
 
     # 获取配置
     my $cfg = zkernel->zapp_config();
 
-    # 连接数据库
-    my $dbh = zkernel->zapp_dbh();
-
-    # 重置zark的dbh
+    # 重置zark
     my $zark = $cfg->{zark};
-    $zark->reset_dbh($dbh);
-
-    # 重置bip的dbh
-    my $bip = $cfg->{bip};
-    $bip->reset_dbh($dbh);
+    $zark->setup($cfg->{dbh});
 
     # 连接stomp
-    my $stp = Net::Stomp->new( 
-        {
-            hostname => $cfg->{stomp}->{hostname}, 
-            port     => $cfg->{stomp}->{port} ,
-        }
-    ) or confess "can not Net::Stomp with { hostname => $cfg->{stomp}->{hostname}, port => $cfg->{stomp}->{port} }";
-    $stp->connect({ login => 'hello', passcode => 'there' });
+    $cfg->{_stomp} = zkernel->zapp_stomp($cfg);
 
     # 构建service的POE session
     Zeta::POE::HTTPD->spawn(
-        ip     => $cfg->{service}->{hostname},
-        port   => $cfg->{service}->{port},
+        lfd    => $cfg->{service}->{lfd},
         module => 'ZAPP::Service',
-        para   => [
-            'dbh'   => $dbh,
-            'zark'  => $zark,
-            'bip'   => $bip,
-            'stomp' => $stp,
-            'svc'   => $cfg->{svc},
-            'cfg'   => $cfg,
-        ]
+        para   => [ $cfg ],
     ) or confess "can not ZAPP::Service->new";
 
     # 运行
@@ -63,6 +43,4 @@ sub {
 };
 
 __END__
-
-
 

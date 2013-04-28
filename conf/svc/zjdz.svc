@@ -3,13 +3,7 @@
 
 
 #
-# $svc对象:  {
-#     dbh        => $dbh
-#     zark       => $zark
-#     bip        => $bip,
-#     stomp      => $stomp,
-#     cfg        => $cfg,
-# }
+# $svc对象:   $cfg
 #--------------------------------
 # req: {
 #           data => {
@@ -35,12 +29,7 @@
 sub {
     my ($svc, $req) = @_;
     my $dbh   = $svc->{dbh};
-    my $stomp = $svc->{stomp};
-    my $cfg   = $svc->{cfg};
 
-    my $serializer  = $cfg->{serializer};
-    my $stpcfg      = $cfg->{stomp};
-    
     my $ret = {
         status => -1,
         errmsg => '',
@@ -57,10 +46,10 @@ sub {
         my $yhyf_bfee;          # 从汇总表获取 已核应付银行手续费
         my $yhys_bfee;          # 从汇总表获取 已核应收银行手续费
         
-        my $sth_txamt_yhys = $dbh->prepare("select j from sum_txamt_yhys where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
-        my $sth_bfee_yhys = $dbh->prepare("select j from sum_bfee_yhys where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
-        my $sth_txamt_yhyf = $dbh->prepare("select d from sum_txamt_yhyf where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
-        my $sth_bfee_yhyf = $dbh->prepare("select d from sum_bfee_yhyf where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
+        my $sth_txamt_yhys = $dbh->prepare("select (sum(j) - sum(d)) as j from sum_txamt_yhys where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
+        my $sth_bfee_yhys = $dbh->prepare("select (sum(j) - sum(d)) as j from sum_bfee_yhys where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
+        my $sth_txamt_yhyf = $dbh->prepare("select (sum(d) - sum(j)) as d from sum_txamt_yhyf where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
+        my $sth_bfee_yhyf = $dbh->prepare("select (sum(d) - sum(j)) as d from sum_bfee_yhyf where bfj_acct = ? and zjbd_date = ? and zjbd_type = ?");
         
 
         for my $type(keys $req->{data}->{zjbd_type}) {
@@ -164,14 +153,23 @@ sub {
     elsif ($req->{data}->{acct_type} == 1) {
         $ret->errmsg = "not support";
     }
-    # 发送到凭证处理消息队列
+
     my $status = -1;
     for my $src(@sources) {
         $status = 0; 
-        $src->{id} = $svc->{zark}->yspz_ins( $src->{_type}, @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} );
-        $svc->{zark}->commit;
+
+        # 插入原始凭证
+        $src->{id} = $svc->{zark}->yspz_ins( 
+            $src->{_type}, 
+            @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
+        );
+        $svc->{dbh}->commit;
+
         # send
-        $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+        $svc->{_stomp}->send({ 
+            destination => $svc->{stomp}->{queue}->{proc}, 
+            body        => $svc->{serializer}->serialize($src) 
+        });
     }
     
     $ret->{status} = $status; 

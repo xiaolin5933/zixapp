@@ -1,70 +1,128 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-
-use ZAPP::Service;
-use Getopt::Long;
 use Zeta::Run;
-use DBI;
-use Carp;
+use ZAPP::DT;
+use ZAPP::BIP::Config;
+use ZAPP::Service;
+use Zark;
 
-my $svc;
-my $dfile;
+use Carp;
+use IO::File;
+use Data::Dump;
+use File::Path qw/mkpath/;
+use File::Copy qw/cp/;
+use Getopt::Long;
+
+my %args;
 my $rtn = GetOptions(
-    'svc|y=s'   => \$svc,
-    'dfile|d=s'  => \$dfile,
+     \%args,
+    'name|n=s',      # 服务名称
+    'datafile|d=s',  # 数据文件  
+    'conf|c=s',      # xxxx.conf
 );
 unless($rtn) {
-    &usage();
+    &usage;
 }
-unless($svc) {
-    &usage();
-}
-unless($dfile) {
-    $dfile = "$ENV{ZIXAPP_HOME}/t/$svc.dat";
-}
+Data::Dump->dump(\%args);
 
-my $file = "$ENV{ZIXAPP_HOME}/conf/svc/$svc.proc";
-unless(-f $file) {
-    die "$file does not exists";
-}
-unless( -f $dfile) {
-    die "$dfile does not exists";
-}
+#
+# 1. 参数检查
+# 2. 准备输入
+# 3. 设置service对象
+# 4. 测试
+#
+&check(\%args);
+my $input   = &prep(\%args);
+Data::Dump->dump($input);
 
-# 加载data, proc
-my $data = do $dfile or die "can not do file[$dfile] error[$@]";;
-my $sub  = do $file  or die "can not do file[$file] error[$@]";
-my %proc = ( $svc => $sub );
+my $service = &setup($input->{svc});
+$service->handle($input->{data});
 
-# 连接数据库, 设置默认schema
-my $dbh = DBI->connect(
-    "dbi:DB2:$ENV{DB_NAME}",
-    @ENV{qw/DB_USER DB_PASS/},
-    {
-        RaiseError       => 1,
-        PrintError       => 0,
-        AutoCommit       => 0,
-        FetchHashKeyName => 'NAME_lc',
-        ChopBlanks       => 1,
+# 测试出你的数据
+exit 0;
+
+#
+# desc   :  检查命令行参数
+#
+sub check {
+    my $args = shift;
+
+    # 如果没有提供服务名称
+    unless($args->{name}) {
+        warn "服务名称无效"; 
+        &usage;
     }
-);
-unless($dbh) {
-    zlogger->error("can not connet db[@ENV{qw/DB_ANME DB_USER DB_PASS/}]");
-    exit 0;
+    unless($args->{datafile}) {
+        warn "数据文件无效";
+        &usage;
+    }
+    unless( -f $args->{datafile}) {
+        warn "数据文件[$args->{datafile}]无法打开";
+        &usage;
+    }
+    unless ($args->{conf}) {
+        $args->{conf} = "$ENV{ZIXAPP_HOME}/conf/svc/$args->{name}.svc";
+    } 
+    unless( -f $args->{conf}) {
+        warn "配置文件[$args->{conf}]不存在";
+       &usage;
+    }
 }
-$dbh->do("set current schema $ENV{DB_SCHEMA}") or confess "can not set current schema $ENV{DB_SCHEMA}";
+    
+#
+# desc  :  获取svc配置hash
+#
+sub prep {
+    my $args = shift;
 
-# 构建proc对象 
-my $proc = ZAPP::PROC->new( dbh => $dbh, proc => \%proc);
-Data::Dump->dump($proc);
-
-for (@$data) {
-    $proc->handle($_);
+    # 读你的开发配置
+    my $svc = do $args->{conf};
+    unless($svc) {
+         die "can not do $args->{conf} [$@]"; 
+    }
+    
+    # 读你的输入
+    my $data = do $args->{datafile};
+    unless($args->{datafile}) {
+         die "can not do $args->{datafile} [$@]"; 
+    }
+    return { 
+        svc =>  { 
+            $args->{name} => $svc,
+        }, 
+        data => $data,
+    };
 }
 
-############################
+#
+#  产生ZAPP::Service对象
+#
+sub setup {
+    my $svc = shift;
+    my $cfg  = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
+    my $proc = do "$ENV{ZIXAPP_HOME}/conf/proc.conf";
+    $cfg->{dbh}  = zkernel->zapp_dbh();
+    $cfg->{zark} = Zark->new(dbh => $cfg->{dbh}, proc => $proc, setup => 1);
+    $cfg->{dt}   = ZAPP::DT->new($cfg);
+    $cfg->{bip}  = ZAPP::BIP::Config->new($cfg);
+    $cfg->{svc}  = $svc;
+    my $service  = ZAPP::Service->new($cfg);
+    return $service;
+}
 
+#
+# usage help
+#
 sub usage {
-    die "tproc --svc|-y 0001 -d 0001.dat";
+    confess  <<EOF;
+usage: 
+    tsvc -n|--name zjdz|yspz_0001
+         -d|--datafile /file/of/data
+        [-c|--conf /file/of/you/xxxx.conf ]
+EOF
 }
+
+
+__END__
+

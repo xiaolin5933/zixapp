@@ -36,7 +36,7 @@ sub {
     $row->[0] =~ s/\.//;
     $row->[0] ||= 0;
 
-    my $config  = $self->{config};
+    my $config  = $self->{cfg}{bip};
     my $dept_id = '51';
     my $dept_bi = $row->[2];
     my $inst = ( $self->{inst}->{$dept_id . '.' . $dept_bi} ||= $config->inst($dept_id, $dept_bi) );

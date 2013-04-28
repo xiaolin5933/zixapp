@@ -1,0 +1,114 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Zeta::Run;
+use ZAPP::DT;
+use ZAPP::BIP::Config;
+use ZAPP::YSPZ::Load;
+use Zark;
+use IO::File;
+use Data::Dump;
+use File::Path qw/mkpath/;
+use File::Copy qw/cp/;
+use Getopt::Long;
+
+my %args;
+my $rtn = GetOptions(
+    \%args,
+    'type|t=s',
+    'conf|c=s',
+    'datafile|d=s',
+);
+unless($rtn) {
+    &usage;
+}
+
+&check(\%args);
+my $load   = &prep(\%args);
+my $loader = &setup($load);
+
+# 测试你的数据
+my $fh = IO::File->new("<$args{datafile}") or die "can not open file[$args{datafile}]";
+while(<$fh>) {
+    s/^\s+|\s+$//;
+    $loader->($_);
+}
+exit 0;
+
+##############################################################################
+
+#
+# desc   : 检查输输入的命令行参数
+#
+sub check {
+    my $args = shift;
+    unless($args->{type}) {
+        warn "无效类型";
+        &usage;
+    }
+    unless($args->{datafile}) {
+        warn "未提供数据文件";
+        &usage;
+    }
+    unless(-f $args->{datafile}) {
+        warn "数据文件[$args->{datafile}]不存在";
+        &usage;
+    }
+    unless ($args->{conf}) {
+        $args->{conf} = "$ENV{ZIXAPP_HOME}/conf/load/$args->{type}.conf";
+    } 
+    unless($args->{conf}) {
+        die "$args->{conf} does not exists";
+    }
+    unless(-f $args->{conf}) {
+    }
+}
+
+#
+# desc   : 准备
+# input  :
+#     $args  -  输入参数
+# output :
+#     load配置hash
+#
+sub prep {
+    my $args = shift;
+    my $load = do $args->{conf};
+    unless($load) {
+        die "can not load $args->{conf}"; 
+    }
+    return {  $args->{type} => $load };
+}
+
+#
+# desc   : 产生loader对象
+# input  :
+# output :
+#
+sub setup {
+    my $load = shift;
+    my $cfg  = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
+    my $proc = do "$ENV{ZIXAPP_HOME}/conf/proc.conf";
+    $cfg->{dbh}  = zkernel->zapp_dbh();
+    $cfg->{zark} = Zark->new(dbh => $cfg->{dbh}, proc => $proc, setup => 1);
+    $cfg->{dt}   = ZAPP::DT->new($cfg);
+    $cfg->{bip}  = ZAPP::BIP::Config->new($cfg);
+    my $loader   = ZAPP::YSPZ::Load->new($cfg, $load, 1);
+    return $loader;
+}
+
+#
+# usage help
+#
+sub usage {
+    die <<EOF;
+usage: 
+    tload -t|--type 0002|0003|.... 
+          -d|--datafile /file/of/data
+         [-c|--conf /file/of/you/xxxx.conf ]
+EOF
+}
+
+
+__END__
+

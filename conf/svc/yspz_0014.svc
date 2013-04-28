@@ -31,13 +31,6 @@
 # ok
 sub {
     my ($svc, $req) = @_;
-    my $dbh   = $svc->{dbh};
-    my $stomp = $svc->{stomp};
-    my $cfg   = $svc->{cfg};
-    
-    my $serializer  = $cfg->{serializer};
-    my $stpcfg      = $cfg->{stomp};
-    
     my $ret = {
         status => -1,
         errmsg => '',
@@ -50,10 +43,18 @@ sub {
     $src->{period}      = $src->{zjbd_date_in};
     $src->{status}      = '0';
     #
-    $src->{id} = $svc->{zark}->yspz_ins( $src->{_type}, @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} );
-    $svc->{zark}->commit;
+    $src->{id} = $svc->{zark}->yspz_ins( 
+        $src->{_type}, 
+        @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
+    );
+
+    $svc->{dbh}->commit;
+
     # send
-    $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+    $svc->{_stomp}->send({ 
+        destination => $stpcfg->{queue}->{proc}, 
+        body        => $serializer->serialize($src),
+    });
 
     $ret->{status} = 0;
     

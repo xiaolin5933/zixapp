@@ -1,0 +1,30 @@
+---
+abstract: 'Account System'
+author:
+  - 'haryzhou <zcman2005@gmail.com>'
+build_requires:
+  ExtUtils::MakeMaker: 0
+configure_requires:
+  ExtUtils::MakeMaker: 0
+dynamic_config: 0
+generated_by: 'ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.120921'
+license: artistic_2
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: zixapp
+no_index:
+  directory:
+    - t
+    - inc
+requires:
+  Data::Dump: 1.21
+  POE: 1.354
+  POE::Filter::JSON: 0.04
+resources:
+  bugtracker: http://github.com/haryzhou/zixapp/issues
+  homepage: http://mojolicio.us
+  license: http://www.opensource.org/licenses/artistic-license-2.0
+  repository: http://github.com/haryzhou/zixapp
+  x_MailingList: http://groups.google.com/group/zeta
+version: ''

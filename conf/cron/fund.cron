@@ -1,0 +1,5 @@
+0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0002
+0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0003
+0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0004
+0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0007
+0 7 * * * *   /home/adfaf/libexec/cron.pl -t 0009

@@ -1,13 +1,9 @@
 #!perl
+use feature qw/state/;
+use ZAPP::BIP::Constant;
 
 #
-# $svc对象:  {
-#     dbh        => $dbh
-#     zark       => $zark
-#     bip        => $bip,
-#     stomp      => $stomp,
-#     cfg        => $cfg,
-# }
+# $svc对象:  $cfg
 #-----------------------------------------
 # req:  {
 #   data => {
@@ -35,13 +31,7 @@
 #
 sub {
     my ($svc, $req) = @_;
-    my $dbh   = $svc->{dbh};
-    my $stomp = $svc->{stomp};
-    my $cfg   = $svc->{cfg};
-    
-    my $serializer  = $cfg->{serializer};
-    my $stpcfg      = $cfg->{stomp};
-    
+
     my $ret = {
         status => -1,
         errmsg => '',
@@ -50,7 +40,7 @@ sub {
 
     my $src = $req->{data};
 
-    my $sth = $dbh->prepare("select dept_bi from dept_bi where dept_id = ? and bi = ?");
+    state $sth = $dbh->prepare("select dept_bi from dept_bi where dept_id = ? and bi = ?");
     $sth->execute(51, $src->{bi});
     my ($dept_bi) = $sth->fetchrow_array() or return $ret;
 
@@ -59,9 +49,6 @@ sub {
     my $inst = $config->inst(51, $dept_bi);
     my $res = $inst->calc( { amt  => $src->{tx_amt}, date => $src->{zjbd_date_out} })->[0];
 
-
-
-    use ZAPP::BIP::Constant;
     my $c = $src->{c};
     # 本金备付金帐号，通过银行接口中的银行协议获取
     $src->{bfj_acct_bj} = $res->[RES_BJ_ACCT];
@@ -72,11 +59,19 @@ sub {
     $src->{status}      = '0';
     $src->{c}           = '51.' . $c;
     $src->{cust_proto}  = '3_'  . $c;
-    #
-    $src->{id} = $svc->{zark}->yspz_ins( $src->{_type}, @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} );
-    $svc->{zark}->commit;
+
+    # 插入原始凭证
+    $src->{id} = $svc->{zark}->yspz_ins( 
+        $src->{_type}, 
+        @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
+    );
+    $svc->{dbh}->commit;
+
     # send
-    $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+    $svc->{_stomp}->send({ 
+        destination => $svc->{stomp}->{queue}->{proc}, 
+        body        => $svc->{serializer}->serialize($src)
+    });
 
     $ret->{status} = 0;
     

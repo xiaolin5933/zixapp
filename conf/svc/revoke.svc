@@ -4,13 +4,7 @@
 #
 
 #
-# $svc对象:  {
-#     dbh        => $dbh
-#     zark       => $zark
-#     bip        => $bip,
-#     stomp      => $stomp,
-#     cfg        => $cfg,
-# }
+# $svc对象:  $cfg
 #--------------------------------------
 # req:  {
 #     data => {
@@ -51,6 +45,8 @@ sub {
     my $revoke_user  = $req->{data}->{rk_user};
     my $ts_revoke    = $dt->ymd('-') . ' ' . $dt->hms(':');
     my $revoke_cause = $req->{data}->{revoke_cause};
+
+
     # 查询指定原始凭证类型与原始凭证id的记账凭证
     my $jzpzs = $svc->{zark}->jzpz_sel($period, $ys_type, $ys_id);
     foreach my $jzpz(@$jzpzs)    {
@@ -71,15 +67,26 @@ sub {
         my $jzpz_id = $svc->{zark}->jzpz_id();
         my @misc    = (@ys, $jzpz_id);
 
-        my $j_id  = $svc->{zark}->book_insert($jzpz->{jb_id}, @{$j}{@{$svc->{zark}->book_flist($jzpz->{jb_id})}}, $j->{j}, 0,    @misc);
-        my $d_id  = $svc->{zark}->book_insert($jzpz->{db_id}, @{$d}{@{$svc->{zark}->book_flist($jzpz->{db_id})}}, 0,    $d->{d}, @misc);
+        my $j_id  = $svc->{zark}->book_insert(
+            $jzpz->{jb_id}, 
+            @{$j}{@{$svc->{zark}->book_flist($jzpz->{jb_id})}}, 
+            $j->{j}, 0,    
+            @misc
+        );
+        my $d_id  = $svc->{zark}->book_insert(
+            $jzpz->{db_id}, 
+            @{$d}{@{$svc->{zark}->book_flist($jzpz->{db_id})}}, 
+            0, $d->{d}, 
+            @misc
+        );
+
         $svc->{zark}->jzpz($jzpz_id, $j_id, $d_id, $jzpz->{jb_id}, $jzpz->{db_id}, @ys, $jzpz->{fid}, $period);
 
     }
     # 通过原始凭证会计期间与id，更新原始凭证的 撤销状态,撤销原因,撤销用户,撤销时间
     $svc->{zark}->yspz_upd_rk($ys_type, $revoke_cause, $revoke_user, $ts_revoke, $period, $ys_id);
 
-    $svc->{zark}->commit;
+    $svc->{dbh}->commit;
 
     # 执行成功
     $ret->{status} = 0;

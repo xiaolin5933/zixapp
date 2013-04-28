@@ -10,18 +10,11 @@ BEGIN {
 }
 
 #
-# {
-#   dbh         => $dbh,
-#   zark        => $zark,
-#   bip         => $bip,
-#   stomp       => $args->{stomp},
-#   serrializer => $args->{serializer},
-#   svc         => { xxx => sub { ... }, }
-# }
+# $cfg
 #
 sub new {
-    my $class = shift;
-    return bless { @_ }, $class;
+    my ($class, $cfg)  = @_;
+    return bless $cfg , $class;
 }
 
 sub handle {
@@ -31,6 +24,5 @@ sub handle {
     return $self->{svc}->{$req->{svc}}->($self, $req);
 }
 
-
-
 1;
+

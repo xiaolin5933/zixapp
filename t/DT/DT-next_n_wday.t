@@ -4,9 +4,15 @@ use Zeta::Run;
 use ZAPP::DT;
 use DateTime;
 plan tests=>38;
-do "$ENV{ZIXAPP_HOME}/libexec/plugin.pl";
-my $dbh = zkernel->zapp_dbh();
-my $zdt = ZAPP::DT->new( dbh => $dbh );
+
+
+my $cfg = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
+my $cfg->{dbh} = zkernel->zapp_dbh();
+my $zdt = ZAPP::DT->new($cfg);
+$cfg->{dbh}->rollback();
+$cfg->{dbh}->disconnect();
+
+
 =pod
 my %map = (
   '2013-02-09' => [ 10,   '2013-02-27' ],

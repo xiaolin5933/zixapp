@@ -1,13 +1,7 @@
 #!perl
 
 #
-# $svc对象:  {
-#     dbh        => $dbh
-#     zark       => $zark
-#     bip        => $bip,
-#     stomp      => $stomp,
-#     cfg        => $cfg,
-# }
+# $svc对象:  $cfg
 #-----------------------------------------
 # req:  {
 #   data => {
@@ -33,13 +27,7 @@
 # ok
 sub {
     my ($svc, $req) = @_;
-    my $dbh   = $svc->{dbh};
-    my $stomp = $svc->{stomp};
-    my $cfg   = $svc->{cfg};
-    
-    my $serializer  = $cfg->{serializer};
-    my $stpcfg      = $cfg->{stomp};
-    
+
     my $ret = {
         status => -1,
         errmsg => '',
@@ -52,11 +40,19 @@ sub {
     $src->{status}    = '0';
 
     #
-    $src->{id} = $svc->{zark}->yspz_ins( $src->{_type}, @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} );
-    $svc->{zark}->commit;
+    $src->{id} = $svc->{zark}->yspz_ins( 
+        $src->{_type}, 
+        @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
+    );
+    $svc->{dbh}->commit;
 
     # send
-    $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+    $svc->{_stomp}->send( 
+        { 
+            destination => $svc->{stomp}->{queue}->{proc}, 
+            body        => $svc->{serializer}->serialize($src) 
+        } 
+    );
     
     $ret->{status} = 0;
     

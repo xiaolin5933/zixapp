@@ -33,7 +33,7 @@ create table yspz_0003 (
 ) in tbs_dat index in tbs_idx; 
 
 
-comment on column yspz_0003.id                   is '原始配置id';
+comment on column yspz_0003.id                   is '原始凭证id';
 comment on column yspz_0003.status               is '原始凭证处理状态. 0:  未处理   1: 处理成功   2: 处理失败。';
 
 comment on column yspz_0003.ssn                  is '交易流水编号';

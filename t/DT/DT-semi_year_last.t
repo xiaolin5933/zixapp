@@ -7,9 +7,12 @@ use DateTime;
 
 plan tests => 16;
 
-do "$ENV{ZIXAPP_HOME}/libexec/plugin.pl";
-my $dbh = zkernel->zapp_dbh();
-my $zdt = ZAPP::DT->new( dbh => $dbh );
+my $cfg = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
+my $cfg->{dbh} = zkernel->zapp_dbh();
+my $zdt = ZAPP::DT->new($cfg);
+$cfg->{dbh}->rollback();
+$cfg->{dbh}->disconnect();
+
 
 ok $zdt->semi_year_last('2013-02-28')  eq '2013-06-30';
 ok $zdt->semi_year_last('2013-03-28')  eq '2013-06-30';

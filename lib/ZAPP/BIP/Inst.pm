@@ -14,11 +14,7 @@ BEGIN {
 ##########################################################################
 # 参数:
 # (
-#     dbh     => $dbh,
-#     dt      => $dt,
-#
 #     acct    => $acct,
-#
 #     proto   => $proto,
 #     bi      => $bi,
 #     matcher => $matcher,
@@ -26,11 +22,9 @@ BEGIN {
 #
 # 对象结构
 # {
-#    dbh   => $dbh,
-#    dt    =>
+#    cfg     => $cfg,
 #
 #    acct    => $acct,
-#
 #    bi      => 
 #    proto   => 
 #    matcher =>
@@ -118,22 +112,22 @@ sub _inout_date {
     }
     # 周
     elsif ($hf->{period} == HF_PERIOD_WEEK) {
-        $dt = $self->{dt}->week_last($date)   # $dt所在周的最后一天
+        $dt = $self->{cfg}{dt}->week_last($date)   # $dt所在周的最后一天
     }
     # 月
     elsif ($hf->{period} == HF_PERIOD_MONTH) {
-        $dt = $self->{dt}->month_last($date)  # $dt所在月的最后一天
+        $dt = $self->{cfg}{dt}->month_last($date)  # $dt所在月的最后一天
     }
     elsif ($hf->{period} == HF_PERIOD_QUARTER) {
-        $dt = $self->{dt}->quarter_last($date)  # $dt所在季度的最后一天
+        $dt = $self->{cfg}{dt}->quarter_last($date)  # $dt所在季度的最后一天
     }
     # 半年
     elsif ($hf->{period} == HF_PERIOD_SEMI_YEAR) {
-        $dt = $self->{dt}->semi_year_last($date)  # $dt所在半年的最后一天
+        $dt = $self->{cfg}{dt}->semi_year_last($date)  # $dt所在半年的最后一天
     }
     # 年
     elsif ($hf->{period} == HF_PERIOD_YEAR) {
-        $dt = $self->{dt}->year_last($date)  # $dt所在年的最后一天
+        $dt = $self->{cfg}{dt}->year_last($date)  # $dt所在年的最后一天
     }
     else {
         warn "ERROR: internal error";
@@ -141,13 +135,13 @@ sub _inout_date {
     }
 
     #  加上划付延迟
-    $dt = $self->{dt}->next_n_day($dt, $hf->{delay});
+    $dt = $self->{cfg}{dt}->next_n_day($dt, $hf->{delay});
 
     #  不是工作日
-    unless( $self->{dt}->is_wday($dt) ) {  # 
+    unless( $self->{cfg}{dt}->is_wday($dt) ) {  # 
         # 非工作日是否划付
         unless ( $hf->{nwd} )  {    # 非工作日 不划付, 取下一工作日
-            $dt = $self->{dt}->next_n_wday($dt, 1);  
+            $dt = $self->{cfg}{dt}->next_n_wday($dt, 1);  
         }
     }
 

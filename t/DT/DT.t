@@ -5,10 +5,11 @@ use ZAPP::DT;
 use DateTime;
 plan tests  => 4;
 
-do "$ENV{ZIXAPP_HOME}/libexec/plugin.pl";
-my $dbh = zkernel->zapp_dbh();
-
-my $zdt = ZAPP::DT->new(dbh => $dbh);
+my $cfg = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
+my $cfg->{dbh} = zkernel->zapp_dbh();
+my $zdt = ZAPP::DT->new($cfg);
+$cfg->{dbh}->rollback();
+$cfg->{dbh}->disconnect();
 
 ok $zdt->next_n_wday('2012-12-30',  10)  eq  '2013-01-13';
 ok $zdt->next_n_wday('2012-12-30',  11)  eq  '2013-01-14';

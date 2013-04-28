@@ -51,11 +51,19 @@ sub {
     $src->{zjbd_type}   = -3;
     $src->{period}      = $src->{zjbd_date_out};
     $src->{status}      = '0';
+
     #
-    $src->{id} = $svc->{zark}->yspz_ins( $src->{_type}, @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} );
-    $svc->{zark}->commit;
+    $src->{id} = $svc->{zark}->yspz_ins( 
+        $src->{_type}, 
+        @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
+    );
+    $svc->{dbh}->commit;
+
     # send
-    $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+    $svc->{_stomp}->send({ 
+        destination => $stpcfg->{queue}->{proc}, 
+        body => $serializer->serialize($src) 
+    });
 
     $ret->{status} = 0;
     

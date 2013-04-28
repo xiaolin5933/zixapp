@@ -38,7 +38,7 @@ sub {
     $row->[4] =~ s/\.//;
     $row->[4] ||= 0;
 
-    my $config  = $self->{config};
+    my $config  = $self->{cfg}{bip};
     my $key = '51.' . $row->[5];
     my $inst = ($self->{inst}->{$key} ||= $config->inst(51, $row->[5]));
 

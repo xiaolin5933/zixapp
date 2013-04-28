@@ -9,11 +9,11 @@ create table frule_entry_d (
 
 -- 划付信息
     type     char(1)  not null,
-    acct     integer  not null,
+    acct     integer,
 
-    period   char(1)  not null,
-    delay    integer  not null,
-    nwd      char(1)  not null,
+    period   char(1),
+    delay    integer,
+    nwd      char(1),
 
     -- 最后操作者ID, 创建时间, 更新时间
     oper_id  char(8),

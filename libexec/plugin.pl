@@ -4,61 +4,52 @@ use warnings;
 use Carp;
 use Zeta::Run;
 use DBI;
+use Zark;
 use ZAPP::BIP::Config;
+use ZAPP::YSPZ::Batch;
+use Net::Stomp;
 
 use constant {
     DEBUG => $ENV{ZAPP_DEBUG} || 0,
 };
 
-BEGIN {
-    require Data::Dump if DEBUG;
-}
+BEGIN { require Data::Dump if DEBUG; }
 
-#
-# 父进程加载插件
-#
+my $cfg;  # 主应用配置
 
-my $cfg = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
-confess "can not load $ENV{ZIXAPP_HOME}/conf/zixapp.conf error[$@]" unless $cfg;
+my $svc;   # svc配置
+my $proc;  # proc配置
+my $load;  # load配置
 
-helper zapp_config => sub { $cfg };
-helper zapp_dbh    => sub {
-    # 获取配置
-    my $cfg = zkernel->zapp_config();
-
-    warn "zapp_config:\n" . Data::Dump->dump($cfg) if DEBUG;
-
-    # 连接数据库
-    my $dbh = DBI->connect(
-        @{$cfg->{db}}{qw/dsn user pass/},
-        {
-            RaiseError       => 1,
-            PrintError       => 0,
-            AutoCommit       => 0,
-            FetchHashKeyName => 'NAME_lc',
-            ChopBlanks       => 1,
-        }
-    );
-    unless($dbh) {
-        zlogger->error("can not connet db[@{$cfg->{db}}{qw/dsn user pass/}], quit");
-        exit 0;
-    }
-
-    # 设置默认schema
-    $dbh->do("set current schema $cfg->{db}->{schema}") or confess "can not set current schema $cfg->{db}->{schema}";
-   
-    return $dbh;
+eval {
+    $cfg  = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
+    $proc = do "$ENV{ZIXAPP_HOME}/conf/proc.conf";
+    $svc  = do "$ENV{ZIXAPP_HOME}/conf/svc.conf";
+    $load = do "$ENV{ZIXAPP_HOME}/conf/load.conf";
 };
+confess "[$@]" if $@;
+$proc ||= {};
+$svc  ||= {};
+$load ||= {};
 
 #
-# 增加配置...
+# svc配置  - svc   - 服务开发
+# 增加配置 - dbh   - 数据库连接
+# 增加配置 - zark  - 凭证处理
 #
-$cfg->{zark} = Zark->new(
-    dbh  => zkernel->zapp_dbh, 
-    proc => delete $cfg->{proc}
-);
-$cfg->{bip}  = ZAPP::BIP::Config->new(dbh => zkernel->zapp_dbh);
+$cfg->{svc}  = $svc;
+$cfg->{dbh}  = zkernel->zapp_dbh();
+$cfg->{zark} = Zark->new(dbh => $cfg->{dbh}, proc => $proc, setup => 0,);
 
-1;
+# 增加配置 - dt    : 时间管理
+# 增加配置 - bip   : 银行协议配置
+# 增加配置 - batch : 批处理控制
+# 增加配置 - load  : 凭证批导
+$cfg->{dt}    = ZAPP::DT->new($cfg);
+$cfg->{bip}   = ZAPP::BIP::Config->new($cfg);
+$cfg->{load}  = ZAPP::YSPZ::Load->new($cfg, $load, 0);
+$cfg->{batch} = ZAPP::YSPZ::Batch->new($cfg);
 
+# 返回值
+$cfg;
 

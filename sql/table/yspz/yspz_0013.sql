@@ -29,7 +29,7 @@ create table yspz_0013 (
 ) in tbs_dat index in tbs_idx; 
 
 
-comment on column yspz_0013.id                   is '原始配置id';
+comment on column yspz_0013.id                   is '原始凭证id';
 comment on column yspz_0013.status               is '原始凭证处理状态. 0:  未处理   1: 处理成功   2: 处理失败。';
 
 comment on column yspz_0013.bfj_acct             is '备付金银行账号';

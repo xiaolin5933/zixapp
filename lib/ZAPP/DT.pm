@@ -13,10 +13,7 @@ BEGIN {
 }
 
 #
-# 参数:
-# (
-#    dbh => $dbh
-# )
+# 参数: $cfg
 #
 # 对象结构
 # {
@@ -26,16 +23,17 @@ BEGIN {
 # }
 #
 sub new {
-    my $self = bless {}, shift;
-    $self->_init({@_});
+    my ($class, $cfg) = @_;
+    my $self = bless {}, $class;
+    $self->_init($cfg->{dbh});
+    return $self;
 }
 
 #
 # 初始化对象结构
 #
 sub _init {
-    my ($self, $args) = @_;
-    my $dbh = $args->{dbh};
+    my ($self, $dbh) = @_;
     return unless $dbh;
    
     my $sel = $dbh->prepare(<<EOF);

@@ -33,31 +33,29 @@
 #
 sub {
     my ($svc, $req) = @_;
-    my $dbh   = $svc->{dbh};
-    my $stomp = $svc->{stomp};
-    my $cfg   = $svc->{cfg};
-    
-    my $serializer  = $cfg->{serializer};
-    my $stpcfg      = $cfg->{stomp};
-    
+
     my $ret = {
         status => -1,
         errmsg => '',
         ret    => ''
     };
+
     # 客户端请求过来的消息
-    my $data         = $req->{data};                           # 会计分录
-    
-    my $sys          = $req->{sys};
+    my $data = $req->{data};                           # 会计分录
+    my $sys  = $req->{sys};
+
     # 组织特种调账单
     my %src;
     my $src->{_type} = '0000';
     $src->{data}     = $data;
     $src->{sys}      = $sys;
     $src->{status}   = '0';
-    my $body = $serializer->serialize($src);
-    my $sendsta = $stomp->send(
-             { destination => $stpcfg->{queue}->{proc}, body => $body } );
+
+    my $body    = $svc->{serializer}->serialize($src);
+    my $sendsta = $svc->{_stomp}->send({  
+        destination => $svc->{stomp}->{queue}->{proc}, 
+        body        => $body 
+    });
     
     # 如果没有发送出去
     if ($sendsta == 1) {

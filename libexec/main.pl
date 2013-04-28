@@ -1,5 +1,6 @@
 #!/usr/bin/perl
-
+use strict;
+use warnings;
 use Zeta::Run;
 use Zeta::IPC::MsgQ;
 
@@ -15,11 +16,12 @@ BEGIN {
 }
 
 sub {
-    my $cfg = zkernel->zapp_config()->{main};
+    my $cfg = zkernel->zapp_config();
+    warn "begin setup HTTPD..." if DEBUG;
     Zeta::POE::HTTPD->spawn(
-         port   => $cfg->{port}, 
-         module => $cfg->{module}, 
-         para   => [$cfg->{para}]
+         port   => $cfg->{main}->{port}, 
+         module => 'ZAPP::Admin',
+         para   => [ $cfg ],
     );
     $poe_kernel->run();
     zkernel->process_stopall();

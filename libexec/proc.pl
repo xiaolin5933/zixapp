@@ -5,7 +5,6 @@ use Zeta::Run;
 use Net::Stomp;
 use DBI;
 use Carp;
-use Zark::Proc;
 
 use constant {
     DEBUG => $ENV{ZAPP_DEBUG} || 0,
@@ -16,28 +15,22 @@ BEGIN {
 }
 
 sub {
+ 
+    #  重置dbh
+    zkernel->zapp_setup();
 
-    # 全局配置
+    # 获取配置
     my $cfg = zkernel->zapp_config();
-
-    # 连接数据库
-    my $dbh = zkernel->zapp_dbh();
-
-    # 重置dbh
+   
+    # zark重置 
     my $zark = $cfg->{zark};
-    $zark->reset_dbh(zkernel->zapp_dbh());
+    $zark->setup($cfg->{dbh});
 
     # 构建stomp客户端
-    my $stomp = Net::Stomp->new( 
-        {
-            hostname => $cfg->{stomp}->{hostname}, 
-            port     => $cfg->{stomp}->{port} ,
-        }
-    ) or confess "can not Net::Stomp with { hostname => $cfg->{stomp}->{hostname}, port => $cfg->{stomp}->{port} }";
-    $stomp->connect({ login => 'hello', passcode => 'there' });
+    my $stp = zkernel->zapp_stomp();
 
     # 订阅
-    $stomp->subscribe(
+    $stp->subscribe(
         {   
             'destination'           => $cfg->{stomp}->{queue}->{proc},
             'ack'                   => 'client',
@@ -51,14 +44,14 @@ sub {
     # 开始loop: 接收原始凭证， 处理原始凭证
     while (1) {
 
-         my $frame = $stomp->receive_frame;
+         my $frame = $stp->receive_frame;
          zlogger->debug("recv frame:\n" . Data::Dump->dump($frame)) if DEBUG;
 
          # 反序列化获取原始配置
          my $src = $ser->deserialize($frame->body);  
          unless($src) {
              zlogger->error("can not deserialize src[" . $frame->body . "]");
-             $stomp->ack( { frame => $frame } );
+             $stp->ack( { frame => $frame } );
              next;
          }
          zlogger->debug("recv src:\n" . Data::Dump->dump($src)) if DEBUG;
@@ -67,14 +60,14 @@ sub {
          my $source;
          unless($source = $zark->handle($src)) {
              zlogger->error("can not handle src[" . $src . "]");
-             $stomp->ack( { frame => $frame } );
+             $stp->ack( { frame => $frame } );
              next;
          }
          # 设置凭证处理状态为成功 1
          $zark->yspz_upd($source->{_type}, '1', $source->{period}, $source->{id});
          $zark->commit;
 
-         $stomp->ack( { frame => $frame } );
+         $stp->ack( { frame => $frame } );
     }
 };
 

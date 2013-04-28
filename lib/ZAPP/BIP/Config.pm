@@ -12,81 +12,19 @@ BEGIN {
 }
 
 #
-# 参数:
-# (
-#     dbh     => $dbh,
-# )
-# 对象结构:
-# {
-#     dbh    => $dbh,
-#     dt     => $dt,
-#     config => {
-#         # 账号字典
-#         acct => {
-#             $id => { sub_type => 1, sub_id   => 1 }
-#         },
-#         
-#         # 银行接口协议 
-#         bip => {
-#             $bi  => [
-#                 { 
-#                     begin =>
-#                     end   => 
-#                     bjhf  =>
-#                     round =>
-#
-#                     # 规则组
-#                     group => {
-#                         gid-1 => [
-#                                 规则1
-#                                 { 
-#                                     hf   => { ... },  # 划付信息
-#                                     sect => [         # 计算区间
-#                                         { begin => xxx, end => xxx, ... }, # 区间1
-#                                         { begin => xxx, end => xxx, ... }, # 区间2
-#                                     ]
-#                                 },
-#                                 规则N
-#                                 { ... },  
-#                             ] 
-#                         ],
-#                         gid-2 => [],
-#                         gid-3 => [],
-#                     },
-#                 }
-#                 { ... },   # 协议N
-#             ],
-#             $bi_N => [ ... ],
-#         },
-#
-#         # dept_bi
-#         dept_bi => {
-#             "$dept_id.$dept_bi" => {
-#                 bi      => $bi,   # 银行接口
-#                 matcher   => {
-#                     $matcher1 => {
-#                         $bip => {},  # 规则组
-#                     },
-#                 },
-#             },
-#             #
-#         }
-#     }
-# }
+# 参数: $cfg
 #
 sub new {
-    my $class = shift;
-    my $self = bless {}, $class;
-    $self->_init( { @_ } );
+    my ($class, $cfg) = @_;
+    my $self = bless { cfg => $cfg }, $class;
+    $self->_init();
 }
 
 #
 # 构建config对象
 #
 sub _init {
-    my ($self, $args) = @_;
-    $self->{dbh} = $args->{dbh};
-    $self->{dt}  = ZAPP::DT->new( dbh => $args->{dbh} );
+    my $self = shift;
 
     # group,  g_ed, ed_sect汇总调整
     my $group   = $self->_load_frule_group();     # 协议ID           => \@规则组ID
@@ -169,26 +107,16 @@ sub _init {
 }
 
 #
-#
-#
-sub reset_dbh {
-    my $self = shift;
-    $self->{dbh} = shift;
-    return $self;
-}
-
-#
 # my $inst = $self->( $部门id, $部门接口);
 #
 sub inst {
     my ($self, $dept_id, $dept_bi) = @_;
+
     my $config = $self->{config};
 
     my $bi = $config->{dept}{$dept_id}{$dept_bi}->{bi};      # 银行接口编号; 
     return ZAPP::BIP::Inst->new(
-        dbh      => $self->{dbh},
-        dt       => $self->{dt},
-
+        cfg      => $self->{cfg},
         bi       => $bi,
         proto    => $config->{bip}{$bi},                            # 银行接口协议;
         acct     => $config->{acct},                                # 账号;
@@ -207,7 +135,7 @@ sub inst {
 # }
 #
 sub _load_dept_bi {
-    my $dbh = shift->{dbh};
+    my $dbh = shift->{cfg}{dbh};
     my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select id, dept_id, dept_bi, bi from dept_bi
 EOF
@@ -243,7 +171,7 @@ EOF
 #
 #
 sub _load_bip {
-    my $dbh = shift->{dbh};
+    my $dbh = shift->{cfg}{dbh};
     my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select 
     id, 
@@ -288,7 +216,7 @@ EOF
 #
 sub _load_frule_group {
 
-    my $dbh = shift->{dbh};
+    my $dbh = shift->{cfg}{dbh};
     my $all = $dbh->selectall_arrayref(<<EOF,  { Slice => {}}); 
 select id, bip from frule_group
 EOF
@@ -312,7 +240,7 @@ EOF
 # }
 #
 sub _load_frule_entry_d {
-    my $dbh = shift->{dbh};
+    my $dbh = shift->{cfg}{dbh};
     my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select 
     frule_entry.id,
@@ -349,7 +277,7 @@ EOF
 # }
 #
 sub _load_frule_d_sect {
-    my $dbh = shift->{dbh};
+    my $dbh = shift->{cfg}{dbh};
     my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select
     id,
@@ -389,7 +317,7 @@ EOF
 #
 sub _load_dept_frule_grp {
 
-    my $dbh = shift->{dbh};
+    my $dbh = shift->{cfg}{dbh};
     my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} } );
 select 
     db_id,
@@ -428,7 +356,7 @@ EOF
 # }
 #
 sub _load_acct {
-    my $dbh = shift->{dbh};
+    my $dbh = shift->{cfg}{dbh};
     my $all = $dbh->selectall_arrayref(<<EOF, {Slice => {}});
 select
     id,
@@ -445,5 +373,64 @@ EOF
 
 
 __END__
+# 对象结构:
+# {
+#     dbh    => $dbh,
+#     dt     => $dt,
+#     config => {
+#         # 账号字典
+#         acct => {
+#             $id => { sub_type => 1, sub_id   => 1 }
+#         },
+#         
+#         # 银行接口协议 
+#         bip => {
+#             $bi  => [
+#                 { 
+#                     begin =>
+#                     end   => 
+#                     bjhf  =>
+#                     round =>
+#
+#                     # 规则组
+#                     group => {
+#                         gid-1 => [
+#                                 规则1
+#                                 { 
+#                                     hf   => { ... },  # 划付信息
+#                                     sect => [         # 计算区间
+#                                         { begin => xxx, end => xxx, ... }, # 区间1
+#                                         { begin => xxx, end => xxx, ... }, # 区间2
+#                                     ]
+#                                 },
+#                                 规则N
+#                                 { ... },  
+#                             ] 
+#                         ],
+#                         gid-2 => [],
+#                         gid-3 => [],
+#                     },
+#                 }
+#                 { ... },   # 协议N
+#             ],
+#             $bi_N => [ ... ],
+#         },
+#
+#         # dept_bi
+#         dept_bi => {
+#             "$dept_id.$dept_bi" => {
+#                 bi      => $bi,   # 银行接口
+#                 matcher   => {
+#                     $matcher1 => {
+#                         $bip => {},  # 规则组
+#                     },
+#                 },
+#             },
+#             #
+#         }
+#     }
+# }
+#
+
 
 

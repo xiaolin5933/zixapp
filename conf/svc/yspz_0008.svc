@@ -32,13 +32,7 @@
 # ok
 sub {
     my ($svc, $req) = @_;
-    my $dbh   = $svc->{dbh};
-    my $stomp = $svc->{stomp};
-    my $cfg   = $svc->{cfg};
-    
-    my $serializer  = $cfg->{serializer};
-    my $stpcfg      = $cfg->{stomp};
-    
+
     my $ret = {
         status => -1,
         errmsg => '',
@@ -50,11 +44,19 @@ sub {
     $src->{period}    = $src->{zjbd_date_in};
     $src->{status}    = '0';
     $src->{c}         = '51.' . $src->{c};
-    #
-    $src->{id} = $svc->{zark}->yspz_ins( $src->{_type}, @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} );
-    $svc->{zark}->commit;
-    # send
-    $stomp->send( { destination => $stpcfg->{queue}->{proc}, body => $serializer->serialize($src) } );
+
+    # 插入原始凭证
+    $src->{id} = $svc->{zark}->yspz_ins( 
+        $src->{_type}, 
+        @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
+    );
+    $svc->{dbh}->commit;
+
+    # 发送到凭证处理模块处理
+    $svc->{_stomp}->send({ 
+        destination => $svc->{stomp}->{queue}->{proc}, 
+        body        => $serializer->serialize($src) 
+    });
 
     $ret->{status} = 0;
     

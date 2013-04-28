@@ -34,7 +34,6 @@ unless ($batch) {
     die &usage;
 }
 
-
 #
 # 连接数据库
 #
@@ -58,7 +57,7 @@ my $loader = ZAPP::YSPZ::Load->new(
 for my $file ( <$path/$date/*.src> ) {
     $file =~ /([^\/]+).src$/;
     warn "load yspz_$1 ...";
-    unless ( $loader->handle($file, $1) ) {
+    unless ( $loader->handle( {type => $1, file => $file} ) ) {
         next; 
     }
 }

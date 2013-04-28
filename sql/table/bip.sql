@@ -13,10 +13,10 @@ create table bip (
     end          date not null,
  
     -- 本金划付信息
-    bjhf_acct    integer  not null,
-    bjhf_period  char(1)  not null,
-    bjhf_delay   integer  not null,
-    bjhf_nwd     char(1)  not null, 
+    bjhf_acct    integer,
+    bjhf_period  char(1),
+    bjhf_delay   integer,
+    bjhf_nwd     char(1), 
  
     -- 取整规则
     round        char(1)  not null,
