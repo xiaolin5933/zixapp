@@ -14,6 +14,8 @@ use File::Path qw/mkpath/;
 use File::Copy qw/cp/;
 use Getopt::Long;
 
+use constant DEBUG => $ENV{TSVC_DEBUG} || 0;
+
 my %args;
 my $rtn = GetOptions(
      \%args,
@@ -24,7 +26,7 @@ my $rtn = GetOptions(
 unless($rtn) {
     &usage;
 }
-Data::Dump->dump(\%args);
+Data::Dump->dump(\%args) if DEBUG;
 
 #
 # 1. 参数检查
@@ -34,15 +36,12 @@ Data::Dump->dump(\%args);
 #
 &check(\%args);
 my $input   = &prep(\%args);
-Data::Dump->dump($input);
-
+Data::Dump->dump($input) if DEBUG;
 my $service = &setup($input->{svc});
 $service->handle($input->{data});
 
-# 测试出你的数据
 exit 0;
 
-#
 # desc   :  检查命令行参数
 #
 sub check {
@@ -72,6 +71,7 @@ sub check {
     
 #
 # desc  :  获取svc配置hash
+# input :  $args  -- 参数
 #
 sub prep {
     my $args = shift;
@@ -96,7 +96,7 @@ sub prep {
 }
 
 #
-#  产生ZAPP::Service对象
+# desc  :  产生ZAPP::Service对象
 #
 sub setup {
     my $svc = shift;

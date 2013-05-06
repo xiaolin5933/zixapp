@@ -11,6 +11,7 @@ use Data::Dump;
 use File::Path qw/mkpath/;
 use File::Copy qw/cp/;
 use Getopt::Long;
+use constant DEBUG => $ENV{TLOAD_DEBUG} || 0;
 
 my %args;
 my $rtn = GetOptions(
@@ -22,9 +23,11 @@ my $rtn = GetOptions(
 unless($rtn) {
     &usage;
 }
+Data::Dump->dump(\%args) if DEBUG;
 
 &check(\%args);
 my $load   = &prep(\%args);
+Data::Dump->dump($load) if DEBUG;
 my $loader = &setup($load);
 
 # 测试你的数据
@@ -66,8 +69,7 @@ sub check {
 
 #
 # desc   : 准备
-# input  :
-#     $args  -  输入参数
+# input  : $args  -  输入参数
 # output :
 #     load配置hash
 #
