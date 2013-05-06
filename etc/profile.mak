@@ -13,6 +13,7 @@ export DB_SCHEMA=ypinst
 alias dbc='db2 connect to $DB_NAME user $DB_USER using $DB_PASS'
 
 alias cdl='cd $ZIXAPP_HOME/log';
+alias cdd='cd $ZIXAPP_HOME/data';
 alias cdlb='cd $ZIXAPP_HOME/lib/ZAPP';
 alias cdle='cd $ZIXAPP_HOME/libexec';
 alias cdb='cd $ZIXAPP_HOME/bin';
