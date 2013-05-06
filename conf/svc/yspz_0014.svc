@@ -47,13 +47,13 @@ sub {
         $src->{_type}, 
         @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
     );
-
+    Data::Dump->dump($src);
     $svc->{dbh}->commit;
 
     # send
     $svc->{_stomp}->send({ 
-        destination => $stpcfg->{queue}->{proc}, 
-        body        => $serializer->serialize($src),
+        destination => $svc->{stomp}->{queue}->{proc},
+        body        => $svc->{serializer}->serialize($src),
     });
 
     $ret->{status} = 0;

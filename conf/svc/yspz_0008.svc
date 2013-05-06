@@ -52,10 +52,11 @@ sub {
     );
     $svc->{dbh}->commit;
 
+
     # 发送到凭证处理模块处理
     $svc->{_stomp}->send({ 
         destination => $svc->{stomp}->{queue}->{proc}, 
-        body        => $serializer->serialize($src) 
+        body        => $svc->{serializer}->serialize($src) 
     });
 
     $ret->{status} = 0;

@@ -40,7 +40,7 @@ sub {
 
     my $src = $req->{data};
 
-    state $sth = $dbh->prepare("select dept_bi from dept_bi where dept_id = ? and bi = ?");
+    state $sth = $svc->{dbh}->prepare("select dept_bi from dept_bi where dept_id = ? and bi = ?");
     $sth->execute(51, $src->{bi});
     my ($dept_bi) = $sth->fetchrow_array() or return $ret;
 
