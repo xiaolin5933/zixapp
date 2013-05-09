@@ -400,6 +400,8 @@ sub get_log {
         my $logfile = "$ENV{ZIXAPP_HOME}/data/$date/$param->{type}/x$job->{index}.log";
         open(IN, "<$logfile");
         while ( <IN> ) {
+            substr($_, 9, 39) = "";   # 过滤日志中的9-31列
+            warn "str#####: $_";
             push @logs, $_;
         }
         close(IN);

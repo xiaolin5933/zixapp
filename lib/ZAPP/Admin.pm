@@ -186,10 +186,10 @@ sub handle {
     }
     # 运行工作
     elsif ( $req->{action} =~ /run_mission/) {
-        warn "begin get jobs id.....";
+        warn "begin get jobs id....." if DEBUG;
         my $jobs = $self->{cfg}{batch}->jobs($req->{param}{mission_id});
-        Data::Dump->dump($req->{param}{mission_id});
-        warn "run ids: \n" . Data::Dump->dump($jobs);
+        Data::Dump->dump($req->{param}{mission_id}) if DEBUG;
+        warn "run ids: \n" . Data::Dump->dump($jobs) if DEBUG;
         for (@$jobs) {
 
             my $name = 'Zbatch' .
