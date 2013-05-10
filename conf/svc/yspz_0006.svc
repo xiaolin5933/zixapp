@@ -50,7 +50,7 @@ sub {
             status      => '0',
         };
         if ( $ys->{clfs} == 1 ) {
-            $src->{yqr_c} = $ys->{yqr_c};
+            $src->{yqr_c} = "51." . $ys->{yqr_c};
             $src->{memo}  = $ys->{memo};
             
         }

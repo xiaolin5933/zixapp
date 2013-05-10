@@ -117,15 +117,15 @@ sub import {
     *{ $pkg . '::RES_BJ_OUT'          } = \&RES_BJ_OUT;
 
     *{ $pkg . '::RES_BFEE_NK_ACCT'    } = \&RES_BFEE_NK_ACCT;
-    *{ $pkg . '::RES_BFEE_NK_I'       } = \&RES_BFEE_NK;
-    *{ $pkg . '::RES_BFEE_NK_O'       } = \&RES_BFEE_NK;
-    *{ $pkg . '::RES_BFEE_NK_IN'      } = \&RES_BFEE_NK;
+    *{ $pkg . '::RES_BFEE_NK_I'       } = \&RES_BFEE_NK_I;
+    *{ $pkg . '::RES_BFEE_NK_O'       } = \&RES_BFEE_NK_O;
+    *{ $pkg . '::RES_BFEE_NK_IN'      } = \&RES_BFEE_NK_IN;
     *{ $pkg . '::RES_BFEE_NK_OUT'     } = \&RES_BFEE_NK_OUT;
 
     *{ $pkg . '::RES_BFEE_WK_ACCT'    } = \&RES_BFEE_WK_ACCT;
-    *{ $pkg . '::RES_BFEE_WK_I'       } = \&RES_BFEE_WK;
-    *{ $pkg . '::RES_BFEE_WK_O'       } = \&RES_BFEE_WK;
-    *{ $pkg . '::RES_BFEE_WK_IN'      } = \&RES_BFEE_WK;
+    *{ $pkg . '::RES_BFEE_WK_I'       } = \&RES_BFEE_WK_I;
+    *{ $pkg . '::RES_BFEE_WK_O'       } = \&RES_BFEE_WK_O;
+    *{ $pkg . '::RES_BFEE_WK_IN'      } = \&RES_BFEE_WK_IN;
     *{ $pkg . '::RES_BFEE_WK_OUT'     } = \&RES_BFEE_WK_OUT;
 
     *{ $pkg . '::RES_BFEE_CWWF_I'     } = \&RES_BFEE_CWWF_I;

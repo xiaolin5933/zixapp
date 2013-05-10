@@ -43,7 +43,7 @@ sub {
     my $inst = ($self->{inst}->{$key} ||= $config->inst(51, $row->[5]));
 
     # 获取10项输出数组第一个数组
-    my $res = $inst->calc( { amt  => $row->[3], date => $date, })->[0];
+    my $res = $inst->calc( { amt  => $row->[3], date => $date, });
     # warn "got bip result:[@$res]";
 
     #
@@ -69,16 +69,16 @@ sub {
         status              => '0',
         
         ssn                 => $row->[1],
-        bfj_acct_bj         => $res->[RES_BJ_ACCT],
+        bfj_acct_bj         => $res->[RES_BJ][RES_BJ_ACCT],
         bi                  => $res->[RES_BI],
         p                   => 3,
         cust_proto          => '3_' . $row->[0],
         c                   => '51.' . $row->[0],
         period              => $date,
         tx_date             => $date,
-        zjbd_date_out       => $res->[RES_BJ_IN],
+        zjbd_date_out       => $res->[RES_BJ][RES_BJ_IN],
         tx_amt              => $row->[3],
-        cwwf_bfee           => $res->[RES_BFEE_CWWF] || 0,
+        cwwf_bfee           => $res->[RES_BFEE][0][RES_BFEE_CWWF_O] || 0,
         wk_cfee             => $row->[4],
     };
 }

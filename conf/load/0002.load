@@ -44,32 +44,33 @@ sub {
     my $config  = $self->{cfg}{bip};
     my $key = '51.' . $row->[5];
     my $inst = ($self->{inst}{$key} ||= $config->inst(51, $row->[5]));
+    warn "$row->[5] $clear_date";
 
     # 获取10项输出数组第一个数组
-    my $res = $inst->calc( { amt  => $row->[3], date => $clear_date, })->[0];
+    my $res = $inst->calc( { amt  => $row->[3], date => $clear_date, });
     # bfj_bfee, bfj_acct_bfee, zjbd_date_out
     my $bfj_bfee        = 0;
     my $bfj_acct_bfee;
     my $zjbd_date_out;
     # 内扣有值时
-    if ($res->[RES_BFEE_NK]) {
-        $bfj_bfee       = $res->[RES_BFEE_NK];
+    if ($res->[RES_BFEE][0][RES_BFEE_NK_O]) {
+        $bfj_bfee       = $res->[RES_BFEE][0][RES_BFEE_NK_O];
     }
-    if ($res->[RES_BFEE_NK_ACCT]) {
-        $bfj_acct_bfee  = $res->[RES_BFEE_NK_ACCT]; 
+    if ($res->[RES_BFEE][0][RES_BFEE_NK_ACCT]) {
+        $bfj_acct_bfee  = $res->[RES_BFEE][0][RES_BFEE_NK_ACCT]; 
     }
-    if ($res->[RES_BFEE_NK_OUT]) {
-        $zjbd_date_out  = $res->[RES_BFEE_NK_OUT]; 
+    if ($res->[RES_BFEE][0][RES_BFEE_NK_OUT]) {
+        $zjbd_date_out  = $res->[RES_BFEE][0][RES_BFEE_NK_OUT]; 
     }
     # 外扣有值时
-    if ($res->[RES_BFEE_WK]) {
-        $bfj_bfee       = $res->[RES_BFEE_WK]; 
+    if ($res->[RES_BFEE][0][RES_BFEE_WK_O]) {
+        $bfj_bfee       = $res->[RES_BFEE][0][RES_BFEE_WK_O]; 
     }
-    if ($res->[RES_BFEE_WK_ACCT]) {
-        $bfj_acct_bfee  = $res->[RES_BFEE_WK_ACCT];
+    if ($res->[RES_BFEE][0][RES_BFEE_WK_ACCT]) {
+        $bfj_acct_bfee  = $res->[RES_BFEE][0][RES_BFEE_WK_ACCT];
     }
-    if ($res->[RES_BFEE_WK_OUT]) {
-        $zjbd_date_out  = $res->[RES_BFEE_WK_OUT];
+    if ($res->[RES_BFEE][0][RES_BFEE_WK_OUT]) {
+        $zjbd_date_out  = $res->[RES_BFEE][0][RES_BFEE_WK_OUT];
     }
 
     $bfj_bfee       ||= 0;
@@ -103,7 +104,7 @@ sub {
         status                  => 0,
 
         ssn                     => $row->[1],
-        bfj_acct_bj             => $res->[RES_BJ_ACCT],
+        bfj_acct_bj             => $res->[RES_BJ][RES_BJ_ACCT],
         bfj_acct_bfee           => $bfj_acct_bfee,
         bi                      => $res->[RES_BI],
         p                       => 1, 
@@ -112,10 +113,10 @@ sub {
         period                  => $date,
         tx_date                 => $date,
         zjbd_date_out           => $zjbd_date_out,
-        zjbd_date_in            => $res->[RES_BJ_IN],
+        zjbd_date_in            => $res->[RES_BJ][RES_BJ_IN],
         tx_amt                  => $row->[3],
         bfj_bfee                => $bfj_bfee,
-        cwwf_bfee               => $res->[RES_BFEE_CWWF] || 0,
+        cwwf_bfee               => $res->[RES_BFEE][0][RES_BFEE_CWWF_O] || 0,
         wk_cfee                 => $row->[4],
     };
 }

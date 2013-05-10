@@ -42,7 +42,7 @@ sub {
     my $inst = ( $self->{inst}->{$dept_id . '.' . $dept_bi} ||= $config->inst($dept_id, $dept_bi) );
 
     # 获取10项输出数组第一个数组
-    my $res = $inst->calc( { amt  => $row->[3], date => $date, })->[0];
+    my $res = $inst->calc( { amt  => $row->[3], date => $date, });
 
     #
     #  插入0007原始凭证
@@ -64,15 +64,15 @@ sub {
         status              => 0,
 
         ssn                 => $row->[1],               # f0
-        bfj_acct_bj         => $res->[RES_BJ_ACCT],     # f1
+        bfj_acct_bj         => $res->[RES_BJ][RES_BJ_ACCT],     # f1
         bi                  => $res->[RES_BI],          # f2
         p                   => 2,                       # f3
         c                   => '51.' . $row->[0],       # f4
         period              => $date,                   # f5
         tx_date             => $date,                   # f6
-        zjbd_date_out       => $res->[RES_BJ_IN],       # f7
+        zjbd_date_out       => $res->[RES_BJ][RES_BJ_IN],       # f7
         tx_amt              => $row->[3],               # f8
-        cwwf_bfee           => $res->[RES_BFEE_CWWF],   # f9
+        cwwf_bfee           => $res->[RES_BFEE][0][RES_BFEE_CWWF_O],   # f9
     };
 
 }

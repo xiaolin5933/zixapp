@@ -43,7 +43,7 @@ sub {
     my $inst = ( $self->{inst}->{$dept_id . '.' . $dept_bi} ||= $config->inst($dept_id, $dept_bi) );
 
     # 获取10项输出数组第一个数组
-    my $res = $inst->calc( { amt  => $row->[3], date => $date, })->[0];
+    my $res = $inst->calc( { amt  => $row->[3], date => $date, });
 
     #
     #  插入0003原始凭证
