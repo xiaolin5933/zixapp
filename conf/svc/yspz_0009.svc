@@ -47,15 +47,16 @@ sub {
     # 获取10项输出数组第一个数组
     my $config  = $svc->{bip};
     my $inst = $config->inst(51, $dept_bi);
-    my $res = $inst->calc( { amt  => $src->{tx_amt}, date => $src->{zjbd_date_out} })->[0];
+    my $res = $inst->calc( { amt  => $src->{tx_amt}, date => $src->{zjbd_date_out} });
+    warn "res: " . Data::Dump->dump($res);
 
     my $c = $src->{c};
     # 本金备付金帐号，通过银行接口中的银行协议获取
-    $src->{bfj_acct_bj} = $res->[RES_BJ_ACCT];
+    $src->{bfj_acct_bj} = $res->[RES_BJ][RES_BJ_ACCT];
     $src->{period}      = $src->{zjbd_date_out};
     $src->{p}           = 3;
     $src->{tx_date}     = $src->{zjbd_date_out};
-    $src->{cwwf_bfee}   = $res->[RES_BFEE_CWWF] || 0; 
+    $src->{cwwf_bfee}   = $res->[RES_BFEE][0][RES_BFEE_CWWF_O] || 0; 
     $src->{status}      = '0';
     $src->{c}           = '51.' . $c;
     $src->{cust_proto}  = '3_'  . $c;

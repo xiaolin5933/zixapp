@@ -1,0 +1,124 @@
+[
+  {
+    'd_dim' => [
+                 'bfj_acct_bj',
+                 'period',
+                 'zjbd_date_out',
+                 'bi'
+               ],
+    'db_id' => '21',
+    'fid' => '1.1',
+    'jb_id' => '24',
+    'j_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'amt' => 'cfee_th'
+  },
+  {
+    'd_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'db_id' => '25',
+    'fid' => '1.2',
+    'jb_id' => '17',
+    'j_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'amt' => 'cfee_th'
+  },
+  {
+    'd_dim' => [
+                 'period'
+               ],
+    'db_id' => '26',
+    'fid' => '2.1.1',
+    'jb_id' => '4',
+    'j_dim' => [
+                 'bfj_acct_1',
+                 'period',
+                 'zjbd_date_in_1',
+                 'bi'
+               ],
+    'amt' => 'bfee_1_th'
+  },
+  {
+    'd_dim' => [
+                 'period'
+               ],
+    'db_id' => '26',
+    'fid' => '2.1.2',
+    'jb_id' => '4',
+    'j_dim' => [
+                 'bfj_acct_2',
+                 'period',
+                 'zjbd_date_in_2',
+                 'bi'
+               ],
+    'amt' => 'bfee_2_th'
+  },
+  {
+    'd_dim' => [
+                 'bi',
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'db_id' => '12',
+    'fid' => '2.2.1',
+    'jb_id' => '23',
+    'j_dim' => [
+                 'period'
+               ],
+    'amt' => 'bfee_1_th'
+  },
+  {
+    'd_dim' => [
+                 'bi',
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'db_id' => '12',
+    'fid' => '2.2.2',
+    'jb_id' => '23',
+    'j_dim' => [
+                 'period'
+               ],
+    'amt' => 'bfee_2_th'
+  },
+  {
+    'd_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'db_id' => '24',
+    'fid' => '3.1',
+    'jb_id' => '22',
+    'j_dim' => [
+                 'bfj_acct_bj',
+                 'period',
+                 'zjbd_date_out',
+                 'bi'
+               ],
+    'amt' => 'psp_amt_th'
+  },
+  {
+    'd_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'db_id' => '17',
+    'fid' => '3.2',
+    'jb_id' => '25',
+    'j_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'amt' => 'psp_amt_th'
+  }
+];

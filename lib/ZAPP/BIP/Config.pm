@@ -1,6 +1,7 @@
 package ZAPP::BIP::Config;
 use strict;
 use warnings;
+use Carp;
 use ZAPP::BIP::Inst;
 use ZAPP::DT;
 use constant {
@@ -27,16 +28,20 @@ sub _init {
     my $self = shift;
 
     # group,  g_ed, ed_sect汇总调整
-    my $group   = $self->_load_frule_group();     # 协议ID           => \@规则组ID
+    my $group   = $self->_load_frule_group();     # 协议ID           => \@规则组: [ { id => xxx, dir => xxx } ]
     my $g_ed    = $self->_load_frule_entry_d();   # gid              => { id(条目) => xxx, hf => {} }
     my $ed_sect = $self->_load_frule_d_sect();    # 直接确认条目ID   => \@直接确认条目-计算区间
     for my $bip_id ( keys %$group) {
-        my $gids = delete $group->{$bip_id};
-        for my $gid (@$gids) {
-            my $g_entries = $g_ed->{$gid};        # 规则组
+        my $grps = delete $group->{$bip_id};
+        for my $grp (@$grps) {
+            my $g_id  = $grp->{id};
+            my $g_dir = $grp->{dir};
+            my $g_entries = $g_ed->{$g_id};        # 规则组
+
+            $group->{$bip_id}{group}{$g_id}{dir} = $g_dir;
             for my $entry (@$g_entries) {
                 $entry->{sect} = $ed_sect->{delete $entry->{id}};
-                push@{$group->{$bip_id}{group}{$gid}}, $entry;
+                push @{$group->{$bip_id}{group}{$g_id}{rules}}, $entry;
             }
         }
     }
@@ -55,21 +60,21 @@ sub _init {
 
     # 组dept_bi部分:  dept_bi + dfg
     my $dept_bi = $self->_load_dept_bi(); 
-    my $dfg     = $self->_load_dept_frule_grp();
+    my $dfg     = $self->_load_dept_fgrp();
     warn "dept_bi:\n" .  Data::Dump->dump($dept_bi) if DEBUG;
     warn "dfg:\n" . Data::Dump->dump($dfg) if DEBUG;
     #
     # 目标:
     # {
-    #     "$dept_id.$dept_bi" => {
-    #         bi      => $bi,   # 银行接口
-    #         matcher => {
-    #             $matcher1 => {
+    #     $dept_id => {
+    #         $dept_bi => {
+    #             bi      => $bi,   # 银行接口
+    #             matcher => {
+    #                 $matcher1 => {
     #                 $bip => $gid,
     #             },
     #         },
     #     },
-    #     #
     # }
     #
     # 来源:  $dept_bi
@@ -128,17 +133,26 @@ sub inst {
 #
 # 加载dept_bi
 # {
-#     "$dept_id.$dept_bi"  => {
-#         id => $id
-#         bi => $bi 
+#     $dept_id => {
+#        $dept_bi  => {
+#            id => $id
+#            bi => $bi 
+#        }
 #     }
 # }
 #
 sub _load_dept_bi {
     my $dbh = shift->{cfg}{dbh};
-    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+    my $all;
+
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select id, dept_id, dept_bi, bi from dept_bi
 EOF
+    };
+    if ($@) {
+        confess "can not select from dept_bi[$@]";
+    }
 
     my %data;
     for ( @$all ) {
@@ -172,7 +186,9 @@ EOF
 #
 sub _load_bip {
     my $dbh = shift->{cfg}{dbh};
-    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+    my $all;
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select 
     id, 
     bi,
@@ -191,6 +207,10 @@ order by
     bi,
     begin asc
 EOF
+    };
+    if ( $@ ) {
+        confess "canot select from bip[$@]";
+    }
     my %bip;
     for (@$all) {
         my ($bi, $acct, $period, $delay, $nwd) = delete @{$_}{qw/bi bjhf_acct bjhf_period bjhf_delay bjhf_nwd/};
@@ -217,12 +237,18 @@ EOF
 sub _load_frule_group {
 
     my $dbh = shift->{cfg}{dbh};
-    my $all = $dbh->selectall_arrayref(<<EOF,  { Slice => {}}); 
-select id, bip from frule_group
+    my $all;
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF,  { Slice => {}}); 
+select id, bip, dir from frule_group
 EOF
+    };
+    if ($@) {
+        confess "can not select from frule_group[$@]";
+    }
     my %bip_grp;
     for (@$all) {
-        push @{$bip_grp{$_->{bip}}}, $_->{id};
+        push @{$bip_grp{delete$_->{bip}}}, $_;
     }
     return \%bip_grp;
 }
@@ -241,10 +267,13 @@ EOF
 #
 sub _load_frule_entry_d {
     my $dbh = shift->{cfg}{dbh};
-    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+    my $all;
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select 
     frule_entry.id,
     gid,
+    dir,
     type,
     acct,
     period,
@@ -257,11 +286,16 @@ left join
 on 
     frule_entry.id = frule_entry_d.id
 EOF
+    };
+    if ($@) {
+        confess "can not select from frule_entry[$@]";
+    }
     my %g_ed;
     for (@$all) {
         my $id  = delete $_->{id}; 
         my $gid = delete $_->{gid}; 
-        push @{$g_ed{$gid}}, { id => $id, hf => $_ };
+        my $dir = delete $_->{dir};
+        push @{$g_ed{$gid}}, { id => $id, dir => $dir, hf => $_ };
     }
     return \%g_ed;
 }
@@ -278,7 +312,9 @@ EOF
 #
 sub _load_frule_d_sect {
     my $dbh = shift->{cfg}{dbh};
-    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+    my $all;
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select
     id,
     ed_id,
@@ -287,7 +323,7 @@ select
     mode,
     ratio,
     ceiling,
-    floor ,
+    floor,
     quota 
 from 
     frule_d_sect
@@ -295,6 +331,10 @@ order by
     ed_id,
     begin asc
 EOF
+   };
+   if ($@) {
+       confess "can not select from frule_d_sect[$@]";
+   }
 
     my %d_sect;
     for (@$all) {
@@ -315,26 +355,38 @@ EOF
 #     $db_id2 => {}
 # }
 #
-sub _load_dept_frule_grp {
+sub _load_dept_fgrp {
 
     my $dbh = shift->{cfg}{dbh};
-    my $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} } );
+
+    # dept_fgrp
+    my $fgrp;
+    eval {
+        $fgrp = $dbh->selectall_arrayref(<<EOF, { Slice => {} } );
 select 
     db_id,
     matcher,
     bip,
     gid
 from 
-    dept_frule_grp
+    dept_fgrp, dept_matcher
+where 
+    dept_fgrp.dbm_id = dept_matcher.id
 EOF
+    };
+    if ($@) {
+        confess "can not select dept_fgrp[$@]";
+    }
 
     my %dfg;
-    for (@$all) {
+    for (@$fgrp) {
        my $db_id   = delete $_->{db_id};
-       my $matcher = delete $_->{matcher};
        my $bip     = delete $_->{bip};
        my $gid     = delete $_->{gid};
-       $dfg{$db_id}{$matcher}{$bip} = $gid;
+       my $matcher = delete $_->{matcher};
+       for (split ',', $matcher) {
+           $dfg{$db_id}{$_}{$bip} = $gid;
+       }
     }
     return \%dfg;
 }
@@ -357,7 +409,9 @@ EOF
 #
 sub _load_acct {
     my $dbh = shift->{cfg}{dbh};
-    my $all = $dbh->selectall_arrayref(<<EOF, {Slice => {}});
+    my $all;
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, {Slice => {}});
 select
     id,
     sub_type,
@@ -365,6 +419,10 @@ select
 from
     dim_acct
 EOF
+    };
+    if ($@) {
+        confess "can not select dim_acct[$@]";
+    }
     return { map { delete $_->{id} => $_ } @$all };
 }
 
@@ -394,9 +452,12 @@ __END__
 #
 #                     # 规则组
 #                     group => {
-#                         gid-1 => [
+#                         gid-1 => {
+#                              dir   => $dir,     # 入 / 出 
+#                              rules => [         # 规则数组
 #                                 规则1
 #                                 { 
+#                                     dir  => $dir # 入 / 出
 #                                     hf   => { ... },  # 划付信息
 #                                     sect => [         # 计算区间
 #                                         { begin => xxx, end => xxx, ... }, # 区间1
@@ -405,10 +466,9 @@ __END__
 #                                 },
 #                                 规则N
 #                                 { ... },  
-#                             ] 
-#                         ],
-#                         gid-2 => [],
-#                         gid-3 => [],
+#                             ],
+#                         },
+#                         gid-2 => {},
 #                     },
 #                 }
 #                 { ... },   # 协议N
@@ -418,15 +478,16 @@ __END__
 #
 #         # dept_bi
 #         dept_bi => {
-#             "$dept_id.$dept_bi" => {
-#                 bi      => $bi,   # 银行接口
-#                 matcher   => {
-#                     $matcher1 => {
-#                         $bip => {},  # 规则组
+#             $dept_id => {
+#                 $dept_bi" => {
+#                     bi      => $bi,   # 银行接口
+#                     matcher   => {
+#                         $matcher1 => {
+#                             $bip => {},  # 规则组
+#                         },
 #                     },
 #                 },
-#             },
-#             #
+#             }
 #         }
 #     }
 # }
