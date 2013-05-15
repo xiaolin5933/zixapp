@@ -107,6 +107,7 @@ sub setup {
     $cfg->{dt}   = ZAPP::DT->new($cfg);
     $cfg->{bip}  = ZAPP::BIP::Config->new($cfg);
     $cfg->{svc}  = $svc;
+    $cfg->{_stomp} = zkernel->zapp_stomp();
     my $service  = ZAPP::Service->new($cfg);
     return $service;
 }
