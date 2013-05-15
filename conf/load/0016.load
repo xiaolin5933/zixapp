@@ -1,0 +1,180 @@
+#!/usr/bin/perl
+use ZAPP::BIP::Constant;
+
+#
+# $self => {
+#     cfg   => $cfg,
+#     inst  => {},
+# }
+#
+#
+sub {
+    my $self = shift;
+    # 收款客户ID,支付记录编号,我方支付成功日期时间,支付金额,确认外收客户手续费金额总和,银行接口编号,银行支付记录编号 无数据,银行成功日期时间,银行清算日期,确认内扣银行手续费金额总和 无数据,确认外扣银行手续费金额总和 无数据,取数值为1（表示正常）的数据,记录生成日期
+    # 20121114018|20130325_131129|2013-03-25 21:44:10.000000|2000.00|11.92|104||2013-03-25 21:44:10.000000|2013-03-25 00:00:00.000000||1.00|1|2013-03-26 10:42:28.000000
+    #  文件记录
+    #-------------------------------------------------
+    #  0  c                 | 825430158149995
+    #  1  psp_c             | 49914410
+    #  2  mcc               | 5814
+    #  3  card_type         | 2
+    #  4  p                 | 5
+    #  5  trans             | 1
+    #  6  amt               | 000000079200
+    #  7  cfee              | D00000618
+    #  8  ssn               | 201578
+    #  9  bi                | 41
+    #  10 tx_datetime       | 20130501131944
+    #  11 stlmnt_date       | 20130501
+    #  12 bfee              | D00000499
+    #  13 lfee              | D00000000016
+    #  14 psp_amt           | C00000107
+    #  15 psp_lfee          | D00000000014
+    
+
+    chomp;
+    my $row         = [ split '\|', $_ ];
+    # period, tx_date, bfee, lfee, cfee, psp_amt, psp_lfee
+    my $tx_date      =  $row->[10];
+    $tx_date         =~ /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/;
+    $tx_date         =  $1 . "-" . $2 . "-" . $3;
+
+    my $stlmnt_date  = $row->[11];
+    $stlmnt_date     =~ /(\d{4})(\d{2})(\d{2})/;
+    $stlmnt_date     =  $1 . '-' . $2 . '-' . $3;
+    
+
+    my $bfee        =  $row->[12];
+    if ($bfee       =~ /^[D0]/) {   # +
+        $bfee       =~ s/^[D0]*//; 
+    }
+    elsif ($bfee    =~ /^[C0]/) {   # -
+        $bfee       =~ s/^[C0]*//; 
+        $bfee       = 0 - $bfee;
+    }
+
+    my $lfee        =  $row->[13];
+    if ($lfee       =~ /^[D0]/) {   # +
+        $lfee           =~ s/^[D0]*//;
+    }
+    elsif ($lfee    =~ /^[C0]/) {   # -
+        $lfee       =~ s/^[C0]*//;
+        $lfee       =  0 - $lfee;
+    }
+
+    my $cfee        =  $row->[7];
+    if ($cfee       =~ /^[D0]/) {   # +
+        $cfee       =~ s/^[D0]*//;
+    }
+    elsif ($cfee    =~ /^[C0]/) {   # -
+        $cfee       =~ s/^[C0]*//;
+        $cfee       =  0 - $cfee;
+    }
+
+    my $psp_amt     =  $row->[14];
+    if ($psp_amt    =~ /^[C0]/) {   # +
+        $psp_amt    =~ s/^[C0]*//;
+    }
+    elsif ($psp_amt =~ /^[D0]/) {   # -
+        $psp_amt    =~ s/^[D0]*//;
+        $psp_amt    =  0 - $psp_amt;
+    }
+
+    my $psp_lfee    =  $row->[15];
+    if ($psp_lfee   =~ /^[D0]/) {   # +
+        $psp_lfee   =~ s/^[D0]*//;
+    }
+    elsif ($psp_lfee =~ /^[C0]/) {  # -
+        $psp_lfee   =~ s/^[C0]*//;
+        $psp_lfee   =  0 - $psp_lfee
+    }
+
+    my $tx_amt   =  $row->[6];
+    $tx_amt      =~ s/^0*//;
+
+    # 银行协议
+    my $config  = $self->{cfg}{bip};
+    my $key = '41.' . $row->[9];
+    my $inst = ($self->{inst}{$key} ||= $config->inst(41, $row->[9]));
+
+    # 获取10项输出数组第一个数组
+    my $matcher = $row->[3] == 1 ? $row->[2] . "*S*J" : $row->[2] . "*S*X";
+    my $res = $inst->calc( { amt  => $tx_amt, date => $stlmnt_date, matcher => $matcher});
+    
+    
+    #
+    
+    # warn "got bip result:[@$res]";
+
+    #
+    #  插入0002原始凭证
+    #  $load->yspz_ins_0002(@fld);
+    #-------------------------------------------------
+    #  银行成本1备付金银行账号      :  f0:  bfj_acct_1
+    #  银行成本2备付金银行账号      :  f1:  bfj_acct_2
+    #  银行成本3备付金银行账号      :  f2:  bfj_acct_3
+    #  本金备付金银行账号           :  f3:  bfj_acct_bj
+    #  银行接口编号                 :  f4:  bi
+    #  往来类型 - 客户手续费        :  f5:  wlzj_type
+    #  产品类型                     :  f6:  p
+    #  会计期间                     :  f7:  period
+    #  本金备付金银行入账日期       :  f8:  zjbd_date_in 
+    #  银行成本1备付金银行出账日期  :  f9:  zjbd_date_out_1
+    #  银行成本2备付金银行出账日期  :  f10: zjbd_date_out_2
+    #  银行成本3备付金银行出账日期  :  f11: zjbd_date_out_3
+    #  交易日期                     :  f12: tx_date
+    #  交易流水编号                 :  f13: ssn
+    #  客户编号                     :  f14: c
+    #  分润客户编号                 :  f15: psp_c
+    #  分润客户协议编号             :  f16: cust_proto
+    #  银联银行成本数额             :  f17: bfee
+    #  银行成本1备付金扣金额        :  f18: bfee_1
+    #  银行成本2备付金扣金额        :  f19: bfee_2
+    #  银行成本3备付金扣金额        :  f20: bfee_3
+    #  银联品牌费数额               :  f21: lfee
+    #  分润方承担的品牌费           :  f22: psp_lfee
+    #  备付金扣客户手续费收入       :  f23: cfee
+    #  备付金扣实时分润金额         :  f24: psp_amt
+
+
+    {
+        _type                   => '0016',
+        status                  => 0,
+
+        # 通过银行协议获取
+        bi                      => $res->[RES_BI],
+        bfj_acct_bj             => $res->[RES_BJ][RES_BJ_ACCT],
+        zjbd_date_in            => $res->[RES_BJ][RES_BJ_IN],
+        bfj_acct_1              => $res->[RES_BFEE][0][RES_BFEE_NK_ACCT],
+        bfj_acct_2              => $res->[RES_BFEE][1][RES_BFEE_NK_ACCT],
+        bfj_acct_3              => $res->[RES_BFEE][2][RES_BFEE_NK_ACCT], 
+        zjbd_date_out_1         => $res->[RES_BFEE][0][RES_BFEE_NK_OUT],
+        zjbd_date_out_2         => $res->[RES_BFEE][1][RES_BFEE_NK_OUT],
+        zjbd_date_out_3         => $res->[RES_BFEE][2][RES_BFEE_NK_OUT],
+        bfee_1                  => $res->[RES_BFEE][0][RES_BFEE_NK_O],
+        bfee_2                  => $res->[RES_BFEE][1][RES_BFEE_NK_O],
+        bfee_3                  => $res->[RES_BFEE][2][RES_BFEE_NK_O],
+
+        # 从每日直联POS代清算收款数据项中取值
+        period                  => $stlmnt_date,
+        bfee                    => $bfee,
+        ssn                     => $row->[8],
+        lfee                    => $lfee,
+        cfee                    => $cfee,
+        c                       => '41.' . $row->[0],
+        p                       => $row->[4],
+        psp_c                   => '41.' . $row->[1],
+        cust_proto              => $row->[4] . '_' . $row->[1],
+        tx_date                 => $tx_date,
+        psp_amt                 => $psp_amt,
+        psp_lfee                => $psp_lfee,
+
+        # 固定值
+        wlzj_type               => 1,
+
+    };
+}
+
+__END__
+
+
