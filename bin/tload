@@ -34,7 +34,9 @@ my $loader = &setup($load);
 my $fh = IO::File->new("<$args{datafile}") or die "can not open file[$args{datafile}]";
 while(<$fh>) {
     s/^\s+|\s+$//;
-    $loader->($_);
+    #$loader->($_);
+    my $yspz = $load->{$args{type}}->($loader, $_);
+    Data::Dump->dump($yspz);
 }
 exit 0;
 
@@ -58,7 +60,7 @@ sub check {
         &usage;
     }
     unless ($args->{conf}) {
-        $args->{conf} = "$ENV{ZIXAPP_HOME}/conf/load/$args->{type}.conf";
+        $args->{conf} = "$ENV{ZIXAPP_HOME}/conf/load/$args->{type}.load";
     } 
     unless($args->{conf}) {
         die "$args->{conf} does not exists";

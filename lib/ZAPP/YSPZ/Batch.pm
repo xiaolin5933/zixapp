@@ -301,6 +301,7 @@ sub assign_job {
     my $cnt;
     if ($size == 0 ) {
         $cnt = 0;
+        $size = $res;
     }
     else {
         $cnt = int($total/$size);
