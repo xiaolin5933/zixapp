@@ -21,7 +21,7 @@ unless($rtn) {
 unless(defined $type) {
     &usage();
 }
-unless($type =~ /(0002|0003|0004|0007|0009|prep)/) {
+unless($type =~ /(0002|0003|0004|0007|0009|0016|0017|prep)/) {
     &usage();
 }
 
@@ -53,7 +53,7 @@ if (DEBUG) {
 # help & prompt
 sub usage {
     print <<EOF;
-    cron.pl -t|--type [0002|0003|0004|0007|0009|prep]
+    cron.pl -t|--type [0002|0003|0004|0007|0009|0016|0017|prep]
 EOF
     exit 0;
 }
