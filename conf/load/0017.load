@@ -129,14 +129,14 @@ sub {
         #从直联POS代清算收款反向交易数据项中取值
         period         => $stlmnt_date,
         ssn            => $row->[8],
-        bfee           => $bfee,
+        bfee           => $bfee || 0,
         c              => '41.'.$row->[0],
         p              => $row->[4],
         psp_c          => '41.'.$row->[1],
         cust_proto     => $row->[4] . '_' . $row->[1],
         tx_date        => $tx_date,
-        cfee           => $cfee, 
-        psp_amt        => $psp_amt,
+        cfee           => $cfee || 0, 
+        psp_amt        => $psp_amt || 0,
 
         # 固定值
         wlzj_type      => 1,
