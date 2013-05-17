@@ -20,8 +20,11 @@ comment on column  load_cfg.rdir   is '远程服务器文件所在位置';
 comment on column  load_cfg.fname  is '远程服务器文件名称';
 
 -- data
-insert into load_cfg(type, host, user, pass, rdir, fname) values('0002', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund', 'fund-0002.dat');
-insert into load_cfg(type, host, user, pass, rdir, fname) values('0003', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund', 'fund-0003.dat');
-insert into load_cfg(type, host, user, pass, rdir, fname) values('0004', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund', 'fund-0004.dat');
-insert into load_cfg(type, host, user, pass, rdir, fname) values('0007', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund', 'fund-0007.dat');
-insert into load_cfg(type, host, user, pass, rdir, fname) values('0009', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund', 'fund-0009.dat');
+insert into load_cfg(type, host, user, pass, rdir, fname) values
+    ('0002', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund',      'fund-0002.dat'),
+    ('0003', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund',      'fund-0003.dat'),
+    ('0004', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund',      'fund-0004.dat'),
+    ('0007', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund',      'fund-0007.dat'),
+    ('0009', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund',      'fund-0009.dat'),
+    ('0016', '127.0.0.1', 'cain', 'cain', 'tmp/data/pos-hn',    'pos-hn-0016.dat'),
+    ('0017', '127.0.0.1', 'cain', 'cain', 'tmp/data/pos-hn',    'pos-hn-0017.dat');
