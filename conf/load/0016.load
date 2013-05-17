@@ -92,6 +92,13 @@ sub {
     my $tx_amt   =  $row->[6];
     $tx_amt      =~ s/^0*//;
 
+    $bfee       ||= 0;
+    $lfee       ||= 0;
+    $cfee       ||= 0;
+    $psp_amt    ||= 0;
+    $psp_lfee   ||= 0;
+    $tx_amt     ||= 0;
+
     # 银行协议
     my $config  = $self->{cfg}{bip};
     my $key = '41.' . $row->[9];
