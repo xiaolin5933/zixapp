@@ -6,6 +6,7 @@ use Zark;
 use ZAPP::BIP::Config;
 use ZAPP::YSPZ::Constant;
 use Zeta::Log;
+use IO::File;
 use Time::HiRes qw/gettimeofday tv_interval/;
 
 use constant {

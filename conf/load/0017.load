@@ -1,0 +1,153 @@
+#!/usr/bin/perl
+use ZAPP::BIP::Constant;
+
+#
+# $self => {
+#     cfg   => $cfg,
+#     inst  => {},
+# }
+#
+#
+sub {
+    my $self = shift;
+    # 收款反向交易商户号,分润方客户编号,MCC,卡类，产品类型,交易类型,收款反向交易金额,退回备付金内扣客户手续费金额,银行支付记录编号,银行接口编号,银行成功日期时间,银行清算日期,银联退回银行成本金额,分润方退回分润金额
+	# 825430158149991|49914410|5814|2|5|2|000000100000|C00000780|209403|41|20130501132219|20130501|D00000630|D00000135
+    #  文件记录
+    #-------------------------------------------------
+    #  0  c                 | 825430158149995
+    #  1  psp_c             | 49914410
+    #  2  mcc               | 5814
+    #  3  card_type         | 2
+    #  4  p                 | 5
+    #  5  trans             | 2
+    #  6  amt               | 000000100000
+    #  7  cfee_th           | C00000780
+    #  8  ssn               | 209403
+    #  9  bi                | 41
+    #  10 tx_datetime       | 20130501132219
+    #  11 stlmnt_date       | 20130501
+    #  12 bfee_th           | D00000630 
+    #  13 psp_amt_th        | D0000013
+    
+
+    chomp;
+    my $row         	= [ split '\|', $_ ];
+    # period, tx_date, bfee_th, cfee_th, psp_amt_th
+    my $tx_date      	=  $row->[10];
+    $tx_date         	=~ /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/;
+    $tx_date         	=  $1 . "-" . $2 . "-" . $3;
+
+    my $stlmnt_date  	= $row->[11];
+    $stlmnt_date     	=~ /(\d{4})(\d{2})(\d{2})/;
+    $stlmnt_date     	=  $1 . '-' . $2 . '-' . $3;
+    
+
+    my $bfee_th     	=  $row->[12];
+    if ($bfee_th    	=~ /^[D0]/) {   # +
+        $bfee_th    	=~ s/^[D0]*//; 
+    }
+    elsif ($bfee_th 	=~ /^[C0]/) {   # -
+        $bfee_th    	=~ s/^[C0]*//; 
+        $bfee_th    	= 0 - $bfee_th;
+    }
+
+    my $cfee_th     	=  $row->[7];
+    if ($cfee_th    	=~ /^[C0]/) {   # +
+        $cfee_th    	=~ s/^[C0]*//;
+    }
+    elsif ($cfee_th 	=~ /^[D0]/) {   # -
+        $cfee_th    	=~ s/^[D0]*//;
+        $cfee_th    	=  0 - $cfee_th;
+    }
+
+    my $psp_amt_th  	=  $row->[13];
+    if ($psp_amt_th 	=~ /^[D0]/) {   # +
+        $psp_amt_th		=~ s/^[D0]*//;
+    }
+    elsif ($psp_amt_th  =~ /^[C0]/) {   # -
+        $psp_amt_th     =~ s/^[C0]*//;
+        $psp_amt_th     =  0 - $psp_amt_th;
+    }
+
+    my $tx_amt   =  $row->[6];
+    $tx_amt      =~ s/^0*//;
+
+    # 银行协议
+    my $config  = $self->{cfg}{bip};
+    my $key = '41.' . $row->[9];
+    my $inst = ($self->{inst}{$key} ||= $config->inst(41, $row->[9]));
+
+    # 获取10项输出数组第一个数组
+	my $matcher = $row->[2] . "*N" ;
+
+    my $res = $inst->calc( { amt  => $tx_amt, date => $stlmnt_date, matcher => $matcher});
+    
+	warn "1111111111111111111" . Data::Dump->dump($stlmnt_date);
+	warn "1111111111111111111" . Data::Dump->dump(\$res);
+    
+    #
+    
+    # warn "got bip result:[@$res]";
+
+    #
+    #  插入0017原始凭证
+    #  $load->yspz_ins_0017(@fld);
+    #-------------------------------------------------
+    #  银行成本1备付金银行账号      :  f0:  bfj_acct_1
+    #  银行成本2备付金银行账号      :  f1:  bfj_acct_2
+    #  本金备付金银行账号           :  f2:  bfj_acct_bj
+    #  银行接口编号                 :  f3:  bi
+    #  往来类型 - 客户手续费        :  f4:  wlzj_type
+    #  产品类型                     :  f5:  p
+    #  会计期间                     :  f6:  period
+    #  本金备付金银行出账日期       :  f7:  zjbd_date_out
+    #  银行成本1备付金银行入账日期  :  f8:  zjbd_date_in_1
+    #  银行成本2备付金银行入账日期  :  f9: 	zjbd_date_in_2
+    #  交易日期                     :  f10: tx_date
+    #  交易流水编号                 :  f11: ssn
+    #  客户编号                     :  f12: c
+    #  分润客户编号                 :  f13: psp_c
+    #  分润客户协议编号             :  f14: cust_proto
+    #  退回银联银行成本数额         :  f15: bfee_th
+    #  退回银行成本1备付金扣金额    :  f16: bfee_1_th
+    #  退回银行成本2备付金扣金额    :  f17: bfee_2_th
+    #  退回备付金扣客户手续费收入   :  f18: cfee_th
+    #  退回备付金扣实时分润金额     :  f19: psp_amt_th
+
+
+    {
+        _type                   => '0017',
+        status                  => 0,
+
+        # 通过银行协议获取
+        bi                      => $res->[RES_BI],
+        bfj_acct_bj             => $res->[RES_BJ][RES_BJ_ACCT],
+        zjbd_date_out           => $res->[RES_BJ][RES_BJ_OUT],
+        bfj_acct_1              => $res->[RES_BFEE][0][RES_BFEE_NK_ACCT],
+        bfj_acct_2              => $res->[RES_BFEE][1][RES_BFEE_NK_ACCT],
+        zjbd_date_in_1         	=> $res->[RES_BFEE][0][RES_BFEE_NK_IN],
+        zjbd_date_in_2         	=> $res->[RES_BFEE][1][RES_BFEE_NK_IN],
+        bfee_1_th               => $res->[RES_BFEE][0][RES_BFEE_NK_I],
+        bfee_2_th               => $res->[RES_BFEE][1][RES_BFEE_NK_I],
+
+        # 从直联POS代清算收款反向交易数据项中取值
+        period                  => $stlmnt_date,
+        ssn                     => $row->[8],
+        bfee_th                 => $bfee_th,
+        c                       => '41.' . $row->[0],
+        p                       => $row->[4],
+        psp_c                   => '41.' . $row->[1],
+        cust_proto              => $row->[4] . '_' . $row->[1],
+        tx_date                 => $tx_date,
+        cfee_th                 => $cfee_th,
+        psp_amt_th              => $psp_amt_th,
+
+        # 固定值 往来资金类型 -- 客户手续费
+        wlzj_type               => 1,
+
+    };
+}
+
+__END__
+
+

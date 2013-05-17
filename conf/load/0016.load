@@ -43,6 +43,7 @@ sub {
     
 
     my $bfee        =  $row->[12];
+    $bfee           =~ s/^\s+//;
     if ($bfee       =~ /^[D0]/) {   # +
         $bfee       =~ s/^[D0]*//; 
     }
@@ -52,6 +53,7 @@ sub {
     }
 
     my $lfee        =  $row->[13];
+    $lfee           =~ s/^\s+//;
     if ($lfee       =~ /^[D0]/) {   # +
         $lfee           =~ s/^[D0]*//;
     }
@@ -61,6 +63,7 @@ sub {
     }
 
     my $cfee        =  $row->[7];
+    $cfee           =~ s/^\s+//;
     if ($cfee       =~ /^[D0]/) {   # +
         $cfee       =~ s/^[D0]*//;
     }
@@ -70,6 +73,7 @@ sub {
     }
 
     my $psp_amt     =  $row->[14];
+    $psp_amt        =~ s/^\s+//;
     if ($psp_amt    =~ /^[C0]/) {   # +
         $psp_amt    =~ s/^[C0]*//;
     }
@@ -79,6 +83,7 @@ sub {
     }
 
     my $psp_lfee    =  $row->[15];
+    $psp_lfee       =~ s/^\s+//;
     if ($psp_lfee   =~ /^[D0]/) {   # +
         $psp_lfee   =~ s/^[D0]*//;
     }
@@ -88,6 +93,7 @@ sub {
     }
 
     my $tx_amt   =  $row->[6];
+    $tx_amt      =~ s/^\s+//;
     $tx_amt      =~ s/^0*//;
 
     $bfee       ||= 0;
@@ -156,23 +162,23 @@ sub {
         zjbd_date_out_1         => $res->[RES_BFEE][0][RES_BFEE_NK_OUT],
         zjbd_date_out_2         => $res->[RES_BFEE][1][RES_BFEE_NK_OUT],
         zjbd_date_out_3         => $res->[RES_BFEE][2][RES_BFEE_NK_OUT],
-        bfee_1                  => $res->[RES_BFEE][0][RES_BFEE_NK_O],
-        bfee_2                  => $res->[RES_BFEE][1][RES_BFEE_NK_O],
-        bfee_3                  => $res->[RES_BFEE][2][RES_BFEE_NK_O],
+        bfee_1                  => $res->[RES_BFEE][0][RES_BFEE_NK_O] || 0,
+        bfee_2                  => $res->[RES_BFEE][1][RES_BFEE_NK_O] || 0,
+        bfee_3                  => $res->[RES_BFEE][2][RES_BFEE_NK_O] || 0,
 
         # 从每日直联POS代清算收款数据项中取值
         period                  => $stlmnt_date,
-        bfee                    => $bfee,
+        bfee                    => $bfee || 0,
         ssn                     => $row->[8],
-        lfee                    => $lfee,
-        cfee                    => $cfee,
+        lfee                    => $lfee || 0,
+        cfee                    => $cfee || 0,
         c                       => '41.' . $row->[0],
         p                       => $row->[4],
         psp_c                   => '41.' . $row->[1],
         cust_proto              => $row->[4] . '_' . $row->[1],
         tx_date                 => $tx_date,
-        psp_amt                 => $psp_amt,
-        psp_lfee                => $psp_lfee,
+        psp_amt                 => $psp_amt || 0,
+        psp_lfee                => $psp_lfee || 0,
 
         # 固定值
         wlzj_type               => 1,
