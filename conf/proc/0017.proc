@@ -13,7 +13,7 @@
                  'period',
                  'wlzj_type'
                ],
-    'amt' => 'cfee_th'
+    'amt' => 'cfee'
   },
   {
     'd_dim' => [
@@ -28,7 +28,7 @@
                  'p',
                  'period'
                ],
-    'amt' => 'cfee_th'
+    'amt' => 'cfee'
   },
   {
     'd_dim' => [
@@ -43,7 +43,7 @@
                  'zjbd_date_in_1',
                  'bi'
                ],
-    'amt' => 'bfee_1_th'
+    'amt' => 'bfee_1'
   },
   {
     'd_dim' => [
@@ -58,7 +58,7 @@
                  'zjbd_date_in_2',
                  'bi'
                ],
-    'amt' => 'bfee_2_th'
+    'amt' => 'bfee_2'
   },
   {
     'd_dim' => [
@@ -73,7 +73,7 @@
     'j_dim' => [
                  'period'
                ],
-    'amt' => 'bfee_1_th'
+    'amt' => 'bfee_1'
   },
   {
     'd_dim' => [
@@ -88,7 +88,7 @@
     'j_dim' => [
                  'period'
                ],
-    'amt' => 'bfee_2_th'
+    'amt' => 'bfee_2'
   },
   {
     'd_dim' => [
@@ -104,7 +104,7 @@
                  'zjbd_date_out',
                  'bi'
                ],
-    'amt' => 'psp_amt_th'
+    'amt' => 'psp_amt'
   },
   {
     'd_dim' => [
@@ -119,6 +119,6 @@
                  'period',
                  'wlzj_type'
                ],
-    'amt' => 'psp_amt_th'
+    'amt' => 'psp_amt'
   }
 ];

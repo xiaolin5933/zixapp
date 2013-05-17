@@ -25,11 +25,11 @@ create table yspz_0017 (
     c                     char(32) not null,
     psp_c                 char(32) not null,
     cust_proto            char(32) not null,
-    bfee_th               bigint not null,
-    bfee_1_th             bigint not null,
-    bfee_2_th             bigint not null,
-    cfee_th               bigint not null,
-    psp_amt_th            bigint not null,
+    bfee                  bigint not null,
+    bfee_1                bigint not null,
+    bfee_2                bigint not null,
+    cfee                  bigint not null,
+    psp_amt               bigint not null,
 
 -- revoke-concerned
     flag                  char(1),
@@ -62,11 +62,11 @@ comment on column yspz_0017.ssn                  is '交易流水编号';
 comment on column yspz_0017.c                    is '客户编号';
 comment on column yspz_0017.psp_c                is '分润客户编号';
 comment on column yspz_0017.cust_proto           is '分润客户协议编号';
-comment on column yspz_0017.bfee_th              is '退回银联银行成本数额';
-comment on column yspz_0017.bfee_1_th            is '退回银行成本1备付金扣金额';
-comment on column yspz_0017.bfee_2_th            is '退回银行成本2备付金扣金额';
-comment on column yspz_0017.cfee_th              is '退回备付金扣客户手续费金额';
-comment on column yspz_0017.psp_amt_th           is '退回备付金扣实时分润金额';
+comment on column yspz_0017.bfee                 is '退回银联银行成本数额';
+comment on column yspz_0017.bfee_1               is '退回银行成本1备付金扣金额';
+comment on column yspz_0017.bfee_2               is '退回银行成本2备付金扣金额';
+comment on column yspz_0017.cfee                 is '退回备付金扣客户手续费金额';
+comment on column yspz_0017.psp_amt              is '退回备付金扣实时分润金额';
 
 comment on column yspz_0017.flag                 is '撤销标志';
 comment on column yspz_0017.revoke_cause         is '撤销原因';
