@@ -26,6 +26,7 @@ sub    HF_PERIOD_MONTH     ()  { 3 }
 sub    HF_PERIOD_QUARTER   ()  { 4 }
 sub    HF_PERIOD_SEMI_YEAR ()  { 5 }
 sub    HF_PERIOD_YEAR      ()  { 6 }
+sub    HF_PERIOD_RTIME     ()  { 7 }
 
 # 交易方向
 sub    BJ_DIR_IN           ()  { 1 }
@@ -96,6 +97,7 @@ sub import {
     *{ $pkg . '::HF_PERIOD_QUARTER'   } = \&HF_PERIOD_QUARTER;
     *{ $pkg . '::HF_PERIOD_SEMI_YEAR' } = \&HF_PERIOD_SEMI_YEAR;
     *{ $pkg . '::HF_PERIOD_YEAR'      } = \&HF_PERIOD_YEAR;
+    *{ $pkg . '::HF_PERIOD_RTIME'     } = \&HF_PERIOD_RTIME;
 
 # 交易方向
     *{ $pkg . '::BJ_DIR_IN'           } = \&BJ_DIR_IN;

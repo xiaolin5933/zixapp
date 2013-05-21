@@ -43,7 +43,7 @@ sub {
     my $inst = ($self->{inst}->{$key} ||= $config->inst(51, $row->[5]));
 
     # 获取10项输出数组第一个数组
-    my $res = $inst->calc( { amt  => $row->[3], date => $date, });
+    my $res = $inst->calc( { amt  => $row->[3], date => $date, tx_date => $date});
     # warn "got bip result:[@$res]";
 
     #

@@ -49,9 +49,10 @@ sub new {
 
 #############################################
 #  req = {
-#      date   => '银行清算日期',
-#      amt    => '金额',
-#      matcher  => 'mcc',
+#      date      => '银行清算日期',
+#      amt       => '金额',
+#      matcher   => 'mcc',
+#      tx_date   => '交易金额',
 #  }
 #
 #  res =   [
@@ -88,11 +89,11 @@ sub calc {
     $res[RES_BJ][RES_BJ_ACCT] = $proto->{bjhf}->{acct};
     if ($group->{dir} == BJ_DIR_IN ) {  
         $res[RES_BJ][RES_BJ_I]  = $req->{amt};
-        $res[RES_BJ][RES_BJ_IN] = $self->_inout_date($proto->{bjhf}, $req->{date});
+        $res[RES_BJ][RES_BJ_IN] = $self->_inout_date($proto->{bjhf}, $req->{date}, $req->{tx_date});
     }
     elsif ($group->{dir} == BJ_DIR_OUT) {
         $res[RES_BJ][RES_BJ_O]   = $req->{amt};
-        $res[RES_BJ][RES_BJ_OUT] = $self->_inout_date($proto->{bjhf}, $req->{date});
+        $res[RES_BJ][RES_BJ_OUT] = $self->_inout_date($proto->{bjhf}, $req->{date}, $req->{tx_date});
     }
     else {
         warn "internal error";
@@ -133,11 +134,12 @@ sub calc {
 #      nwd     => '非工作日是否划付',
 #   },
 #   $date,
+#   $tx_date,
 # 输出:
 ####################################################
 sub _inout_date {
 
-    my ($self, $hf, $date) = @_;
+    my ($self, $hf, $date, $tx_date) = @_;
 
     my $dt;
 
@@ -148,6 +150,7 @@ sub _inout_date {
     elsif ($hf->{period} == HF_PERIOD_QUARTER)   { $dt = $self->{cfg}{dt}->quarter_last($date)   } # $dt所在季度的最后一天 
     elsif ($hf->{period} == HF_PERIOD_SEMI_YEAR) { $dt = $self->{cfg}{dt}->semi_year_last($date) } # $dt所在半年的最后一天 
     elsif ($hf->{period} == HF_PERIOD_YEAR)      { $dt = $self->{cfg}{dt}->year_last($date)      } # $dt所在年的最后一天 
+    elsif ($hf->{period} == HF_PERIOD_RTIME)     { $dt = $tx_date; }                               # 实时划付
     else { warn "ERROR: internal error"; return; }
 
     #  加上划付延迟
@@ -285,13 +288,13 @@ sub _bfee_in {
             if ( $proto->{bjhf}->{acct} == $hf->{acct} ) {
                 $rec[RES_BFEE_NK_ACCT] = $hf->{acct};
                 $rec[RES_BFEE_NK_I]  = $bfee;
-                $rec[RES_BFEE_NK_IN] = $self->_inout_date($hf, $req->{date});
+                $rec[RES_BFEE_NK_IN] = $self->_inout_date($hf, $req->{date}, $req->{tx_date});
             }
             # 备付金外扣
             else {
                 $rec[RES_BFEE_WK_ACCT] = $hf->{acct};
                 $rec[RES_BFEE_WK_I]  = $bfee;
-                $rec[RES_BFEE_WK_IN] = $self->_inout_date($hf, $req->{date});
+                $rec[RES_BFEE_WK_IN] = $self->_inout_date($hf, $req->{date}, $req->{tx_date});
             }
         }  
         else { # 自有资金 
@@ -330,13 +333,13 @@ sub _bfee_out {
             if ( $proto->{bjhf}->{acct} == $hf->{acct} ) {
                 $rec[RES_BFEE_NK_ACCT] = $hf->{acct};
                 $rec[RES_BFEE_NK_O]  = $bfee;
-                $rec[RES_BFEE_NK_OUT] = $self->_inout_date($hf, $req->{date});
+                $rec[RES_BFEE_NK_OUT] = $self->_inout_date($hf, $req->{date}, $req->{tx_date});
             }
             # 备付金外扣
             else {
                 $rec[RES_BFEE_WK_ACCT] = $hf->{acct};
                 $rec[RES_BFEE_WK_O]    = $bfee;
-                $rec[RES_BFEE_WK_OUT]  = $self->_inout_date($hf, $req->{date});
+                $rec[RES_BFEE_WK_OUT]  = $self->_inout_date($hf, $req->{date}, $req->{tx_date});
             }
         }  
         else { # 自有资金 

@@ -47,7 +47,7 @@ sub {
     # 获取10项输出数组第一个数组
     my $config  = $svc->{bip};
     my $inst = $config->inst(51, $dept_bi);
-    my $res = $inst->calc( { amt  => $src->{tx_amt}, date => $src->{zjbd_date_out} });
+    my $res = $inst->calc( { amt  => $src->{tx_amt}, date => $src->{zjbd_date_out}, tx_date => $src->{zjbd_date_out} });
 
     my $c = $src->{c};
     # 本金备付金帐号，通过银行接口中的银行协议获取

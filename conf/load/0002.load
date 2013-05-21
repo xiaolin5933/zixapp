@@ -47,7 +47,7 @@ sub {
     warn "$row->[5] $clear_date";
 
     # 获取10项输出数组第一个数组
-    my $res = $inst->calc( { amt  => $row->[3], date => $clear_date, });
+    my $res = $inst->calc( { amt  => $row->[3], date => $clear_date, tx_date => $date});
     # bfj_bfee, bfj_acct_bfee, zjbd_date_out
     my $bfj_bfee        = 0;
     my $bfj_acct_bfee;
