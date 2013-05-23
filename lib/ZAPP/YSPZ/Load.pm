@@ -57,7 +57,13 @@ EOF
 
     # 更新job失败数量，如果成功置失败数量为0
     $self->{upd_j} = $self->{cfg}{dbh}->prepare(<<EOF);
-update load_job set fail = 
+update load_job set status = 
+(
+    case total 
+        when succ then 3
+        else -1
+    end
+), fail = 
 (
     case total
         when succ then 0
@@ -148,70 +154,95 @@ sub handle {
     # 一个批次的成功失败数量
     my $b_succ = 0;
     my $b_fail = 0;
-   
-    while(<$fh>) {
-        ++$line;
+  
+    eval { 
+        while(<$fh>) {
+            ++$line;
 
-        s/^\s+|\s+$//;
+            s/^\s+|\s+$//;
 
-        # 生成原始凭证
-        my $yspz = $self->{load}{$type}->($self, $_);  
-        unless($yspz) {
-            $logger->error(
-                 sprintf("非法数据行: L[%06d] B[%06d] I[%03d]", 
-                     $line, $rotation, $size)
-            );
-            ++$fail;
-            $flog->print($_, "\n");
-            next;
-        }
-
-        # db
-        eval { 
-            # 插入原始凭证(`处理成功)
-            # 处理原始凭证, 登记账簿
-            # 更新原始凭证处理状态
-            $yspz->{id} = $self->{cfg}{zark}->yspz_ins( 
-                $yspz->{_type}, 
-                @{$yspz}{@{$self->{cfg}{zark}->yspz_flist($yspz->{_type})}},
-            );
-            $self->{cfg}{zark}->handle($yspz);
-            $self->{cfg}{zark}->yspz_upd($yspz->{_type}, '1', $yspz->{period}, $yspz->{id});
-
-        };
-        if ($@) {
-            # 唯一键重复....
-            my $err    = $self->{cfg}{dbh}->err;
-            if ( $err =~ /803/ ) {
-                warn "insert: unique index error" if DEBUG;
-                next;
-            } 
-            # todo
-            if (0) {
+            # 生成原始凭证
+            my $yspz = $self->{load}{$type}->($self, $_);  
+            unless($yspz) {
+                $logger->error(
+                    sprintf("非法数据行: L[%06d] B[%06d] I[%03d]", 
+                        $line, $rotation, $size)
+                );
+                ++$fail;
+                $flog->print($_, "\n");
                 next;
             }
 
-            $flog->print($_, "\n");
-            $logger->error(sprintf("不能处理原始凭证: L[%06d] B[%06d] I[%03d] errmsg[$@]", $line, $rotation, $size));
+            # db
+            eval { 
+                # 插入原始凭证(`处理成功)
+                # 处理原始凭证, 登记账簿
+                # 更新原始凭证处理状态
+                $yspz->{id} = $self->{cfg}{zark}->yspz_ins( 
+                    $yspz->{_type}, 
+                    @{$yspz}{@{$self->{cfg}{zark}->yspz_flist($yspz->{_type})}},
+                );
+                $self->{cfg}{zark}->handle($yspz);
+                $self->{cfg}{zark}->yspz_upd($yspz->{_type}, '1', $yspz->{period}, $yspz->{id});
 
-            $self->{cfg}{dbh}->rollback();
+            };
+            if ($@) {
+                # 唯一键重复....
+                my $err    = $self->{cfg}{dbh}->err;
+                if ( $err =~ /803/ ) {
+                    warn "insert: unique index error" if DEBUG;
+                    next;
+                } 
+                # todo
+                if (0) {
+                    next;
+                }
 
-            # 重置批次:
-            $size = 0;
-            ++$rotation;
-            ++$fail;
-            next;
+                $flog->print($_, "\n");
+                $logger->error(sprintf("不能处理原始凭证: L[%06d] B[%06d] I[%03d] errmsg[$@]", $line, $rotation, $size));
+
+                $self->{cfg}{dbh}->rollback();
+
+                # 重置批次:
+                $size = 0;
+                ++$rotation;
+                ++$fail;
+                next;
+            }
+
+            ++$size;
+
+            # 批次完成， 提交批次
+            if ($size == $self->{batch}) {
+                $succ += $size;
+
+                # 更新子任务进度
+                $status = $fail > 0 ? JOB_FAIL : JOB_SUCCESS if $line == $args->{total};
+                $self->{ujob}->execute($fail - $b_fail, $succ - $b_succ, $status, $args->{job_id});
+                $self->{cfg}{dbh}->commit();
+
+                # 更新累计批次成功失败数量
+                $b_succ += $succ - $b_succ;
+                $b_fail += $fail - $b_fail;
+
+                my $elapse = tv_interval($ts_beg);
+                $logger->debug(sprintf("成功! B[%06d], BS[%03d], L[%06d] T[$elapse]", $rotation, $self->{batch}, $line));
+
+                $ts_beg = [gettimeofday];
+
+                ++$rotation;
+                $size = 0;
+            }
+
         }
-
-        ++$size;
-
-        # 批次完成， 提交批次
-        if ($size == $self->{batch}) {
+ 
+        # 最后一个批次
+        if ( $size ) {
             $succ += $size;
 
             # 更新子任务进度
-            $status = $fail > 0 ? JOB_FAIL : JOB_SUCCESS if $line == $args->{total};
-            $self->{ujob}->execute($fail - $b_fail, $succ - $b_succ, $status, $args->{job_id});
+            $status = $fail > 0 ? -1 : 3;
+            $self->{ujob}->execute($fail  - $b_fail, $succ - $b_succ, $status, $args->{job_id});
             $self->{cfg}{dbh}->commit();
 
             # 更新累计批次成功失败数量
@@ -219,43 +250,20 @@ sub handle {
             $b_fail += $fail - $b_fail;
 
             my $elapse = tv_interval($ts_beg);
-            $logger->debug(sprintf("成功! B[%06d], BS[%03d], L[%06d] T[$elapse]", $rotation, $self->{batch}, $line));
+            $logger->debug(sprintf("成功! B[%06d], BS[%03d], L[%06d] T[$elapse]-- 最后一批", $rotation, $size, $line));
+        }
+        else {
+            # 更新子任务进度
+            $status = $fail > 0 ? -1 : 3;
+            $self->{ujob}->execute($fail  - $b_fail, $succ - $b_succ, $status, $args->{job_id});
+            $self->{cfg}{dbh}->commit();
 
-            $ts_beg = [gettimeofday];
-
-            ++$rotation;
-            $size = 0;
+            # 更新累计批次成功失败数量
+            $b_succ += $succ - $b_succ;
+            $b_fail += $fail - $b_fail;
         }
 
-    }
- 
-    # 最后一个批次
-    if ( $size ) {
-        $succ += $size;
-
-        # 更新子任务进度
-        $status = $fail > 0 ? -1 : 3;
-        $self->{ujob}->execute($fail  - $b_fail, $succ - $b_succ, $status, $args->{job_id});
-        $self->{cfg}{dbh}->commit();
-
-        # 更新累计批次成功失败数量
-        $b_succ += $succ - $b_succ;
-        $b_fail += $fail - $b_fail;
-
-        my $elapse = tv_interval($ts_beg);
-        $logger->debug(sprintf("成功! B[%06d], BS[%03d], L[%06d] T[$elapse]-- 最后一批", $rotation, $size, $line));
-    }
-    else {
-        # 更新子任务进度
-        $status = $fail > 0 ? -1 : 3;
-        $self->{ujob}->execute($fail  - $b_fail, $succ - $b_succ, $status, $args->{job_id});
-        $self->{cfg}{dbh}->commit();
-
-        # 更新累计批次成功失败数量
-        $b_succ += $succ - $b_succ;
-        $b_fail += $fail - $b_fail;
-    }
-
+    };
     # 更新此job的状态与失败数量
     $self->{upd_j}->execute($args->{job_id});
     $self->{cfg}{dbh}->commit();
