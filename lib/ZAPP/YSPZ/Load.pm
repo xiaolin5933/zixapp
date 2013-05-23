@@ -264,18 +264,25 @@ sub handle {
         }
 
     };
+    if ($@) {
+        $self->{cfg}{dbh}->rollback(); 
+    }
     # 更新此job的状态与失败数量
-    $self->{upd_j}->execute($args->{job_id});
-    $self->{cfg}{dbh}->commit();
+    eval {
+        $self->{upd_j}->execute($args->{job_id});
 
-    ### mission
-    # 增加mission中，成功或失败数量
-    $self->{upd_stat}->execute($succ, $fail, $args->{mission_id});
-    $self->{cfg}{dbh}->commit();
+        ### mission
+        # 增加mission中，成功或失败数量
+        $self->{upd_stat}->execute($succ, $fail, $args->{mission_id});
 
-    # 更新mission执行状态
-    $self->{upd_m}->execute($args->{mission_id});
-    $self->{cfg}{dbh}->commit();
+        # 更新mission执行状态
+        $self->{upd_m}->execute($args->{mission_id});
+
+        $self->{cfg}{dbh}->commit();
+    };
+    if($@) {
+        $self->{cfg}{dbh}->rollback();
+    }
 
     return $self;
 }
