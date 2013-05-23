@@ -109,7 +109,7 @@ sub {
     my $inst = ($self->{inst}{$key} ||= $config->inst(41, $row->[9]));
 
     # 获取10项输出数组第一个数组
-    my $matcher = $row->[3] == 1 ? $row->[2] . "*S*J" : $row->[2] . "*S*X";
+    my $matcher = $row->[3] == 1 ? $row->[2] . "*I*J" : $row->[2] . "*I*X";
     my $res = $inst->calc( { amt  => $tx_amt, date => $stlmnt_date, matcher => $matcher, tx_date => $tx_date});
     
     

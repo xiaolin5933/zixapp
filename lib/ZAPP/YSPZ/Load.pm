@@ -52,13 +52,19 @@ sub setup {
     my $self = shift;
     # 更新job
     $self->{ujob} = $self->{cfg}{dbh}->prepare(<<EOF);
-update load_job set fail = ?, succ = ?, status = ?  where id = ?
+update load_job set fail=fail+?, succ=succ+?, status = ?  where id = ?
 EOF
 
-    # 更新mission
-    $self->{umission} = $self->{cfg}{dbh}->prepare(<<EOF);
-update load_mission set status = ?, succ = ?, fail = ? 
-               where id = ?
+    # 更新job失败数量，如果成功置失败数量为0
+    $self->{upd_j} = $self->{cfg}{dbh}->prepare(<<EOF);
+update load_job set fail = 
+(
+    case total
+        when succ then 0
+        else fail
+    end
+)
+where id = ? and total > 0
 EOF
 
     # 更新mission状态为成功或失败
@@ -70,6 +76,12 @@ update load_mission set status =
         when fail then -3
         else 6
     end
+), fail = 
+(
+    case total 
+        when succ then 0
+        else fail
+    end
 )
 where id = ? and total > 0
 EOF
@@ -78,11 +90,6 @@ EOF
     # 更新失败数 +n
     $self->{upd_stat} = $self->{cfg}{dbh}->prepare(<<EOF);
 update load_mission set succ=succ+?, fail=fail+? where id = ?
-EOF
-
-    # 统计指定mission的各状态所对应的job数量
-    $self->{stat_j} = $self->{cfg}{dbh}->prepare(<<EOF);
-select count(*) as count, sum(succ) as succ, sum(fail) as fail, status from load_job where mission_id = ? group by status
 EOF
 
     return $self;
@@ -113,7 +120,7 @@ sub handle {
     }
 
     # 失败文件
-    my $flog = IO::File->new("$file.fail");
+    my $flog = IO::File->new("> $file.fail");
 
     # 日志
     my $logger = Zeta::Log->new(
@@ -138,6 +145,9 @@ sub handle {
     # 更新任务为 运行中
     $self->{ujob}->execute($fail, $succ, $status, $args->{job_id});
     $self->{cfg}{dbh}->commit();
+    # 一个批次的成功失败数量
+    my $b_succ = 0;
+    my $b_fail = 0;
    
     while(<$fh>) {
         ++$line;
@@ -170,7 +180,12 @@ sub handle {
 
         };
         if ($@) {
-            # 主键重复....
+            # 唯一键重复....
+            my $err    = $self->{cfg}{dbh}->err;
+            if ( $err =~ /803/ ) {
+                warn "insert: unique index error" if DEBUG;
+                next;
+            } 
             # todo
             if (0) {
                 next;
@@ -188,7 +203,6 @@ sub handle {
             next;
         }
 
-
         ++$size;
 
         # 批次完成， 提交批次
@@ -197,8 +211,12 @@ sub handle {
 
             # 更新子任务进度
             $status = $fail > 0 ? JOB_FAIL : JOB_SUCCESS if $line == $args->{total};
-            $self->{ujob}->execute($fail, $succ, $status, $args->{job_id});
+            $self->{ujob}->execute($fail - $b_fail, $succ - $b_succ, $status, $args->{job_id});
             $self->{cfg}{dbh}->commit();
+
+            # 更新累计批次成功失败数量
+            $b_succ += $succ - $b_succ;
+            $b_fail += $fail - $b_fail;
 
             my $elapse = tv_interval($ts_beg);
             $logger->debug(sprintf("成功! B[%06d], BS[%03d], L[%06d] T[$elapse]", $rotation, $self->{batch}, $line));
@@ -217,8 +235,12 @@ sub handle {
 
         # 更新子任务进度
         $status = $fail > 0 ? -1 : 3;
-        $self->{ujob}->execute($fail, $succ, $status, $args->{job_id});
+        $self->{ujob}->execute($fail  - $b_fail, $succ - $b_succ, $status, $args->{job_id});
         $self->{cfg}{dbh}->commit();
+
+        # 更新累计批次成功失败数量
+        $b_succ += $succ - $b_succ;
+        $b_fail += $fail - $b_fail;
 
         my $elapse = tv_interval($ts_beg);
         $logger->debug(sprintf("成功! B[%06d], BS[%03d], L[%06d] T[$elapse]-- 最后一批", $rotation, $size, $line));
@@ -226,10 +248,19 @@ sub handle {
     else {
         # 更新子任务进度
         $status = $fail > 0 ? -1 : 3;
-        $self->{ujob}->execute($fail, $succ, $status, $args->{job_id});
+        $self->{ujob}->execute($fail  - $b_fail, $succ - $b_succ, $status, $args->{job_id});
         $self->{cfg}{dbh}->commit();
+
+        # 更新累计批次成功失败数量
+        $b_succ += $succ - $b_succ;
+        $b_fail += $fail - $b_fail;
     }
 
+    # 更新此job的状态与失败数量
+    $self->{upd_j}->execute($args->{job_id});
+    $self->{cfg}{dbh}->commit();
+
+    ### mission
     # 增加mission中，成功或失败数量
     $self->{upd_stat}->execute($succ, $fail, $args->{mission_id});
     $self->{cfg}{dbh}->commit();

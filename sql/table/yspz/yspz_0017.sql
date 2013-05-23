@@ -21,7 +21,7 @@ create table yspz_0017 (
     zjbd_date_in_1        date,
     zjbd_date_in_2        date,
     tx_date               date not null,
-    ssn                   char(32) not null,
+    ssn                   char(32) not null unique,
     c                     char(32) not null,
     psp_c                 char(32) not null,
     cust_proto            char(32) not null,

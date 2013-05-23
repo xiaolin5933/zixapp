@@ -23,7 +23,7 @@ create table yspz_0016 (
     zjbd_date_out_2       date,
     zjbd_date_out_3       date,
     tx_date               date not null,
-    ssn                   char(32) not null,
+    ssn                   char(32) not null unique,
     c                     char(32) not null,
     psp_c                 char(32) not null,
     cust_proto            char(32) not null,

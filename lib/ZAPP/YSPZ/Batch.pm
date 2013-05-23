@@ -365,8 +365,8 @@ sub run_job {
 sub _run_job {
     my ($self, $job) = @_;
 
-    # 如果$job不是可运行状态
-    return unless $job->{status} == JOB_RUNNABLE;
+    # 如果$job不是可运行状态 或 运行失败状态
+    return if ($job->{status} != JOB_RUNNABLE && $job->{status} != JOB_FAIL);
 
     warn "begin run job:\n" . Data::Dump->dump($job) if DEBUG;
 
