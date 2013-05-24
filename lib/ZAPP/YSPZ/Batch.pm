@@ -221,6 +221,7 @@ sub down_file {
         my $down = Net::FTP->new($row->{host})              or confess "can not Net::FTP->new";
         $down->login(@{$row}{qw/user pass/})                or confess "can not login";
         $down->cwd($row->{rdir} . "/$date")                 or confess "can not cwd";
+        $down->get('.ok')                                   or confess "can not get .ok file";
         $down->get($self->fname($param->{type}))            or confess "can not get file";
         $down->quit;     
         rename $self->fname($param->{type}), "$param->{type}.src" or confess "can not rename";
@@ -236,8 +237,16 @@ sub down_file {
     }
 
     # 更新状态为下一步: 可分配
-    $self->{upd_m}->execute(MISSION_ASSIGNABLE, 0, 0, 0, $param->{mission_id});
-    $self->{cfg}{dbh}->commit();
+    # 如果存在.ok文件，说明已经完全在ftp服务器上准备好文件了，下下来的文件可以正常使用, 状态为可分配
+    if (-e ".ok") {
+        $self->{upd_m}->execute(MISSION_ASSIGNABLE, 0, 0, 0, $param->{mission_id});
+        $self->{cfg}{dbh}->commit();
+    }
+    # 如果没有.ok文件，说明没有在ftp上准备好文件，那么不能使用该文件，状态为下载失败
+    else {
+        $self->{upd_m}->execute(MISSION_FAIL_DOWN,0,0,0,$param->{mission_id});
+        $self->{cfg}{dbh}->commit();
+    }
   
     return $self;
 }
