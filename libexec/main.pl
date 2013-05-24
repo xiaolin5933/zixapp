@@ -5,7 +5,7 @@ use Zeta::Run;
 use Zeta::IPC::MsgQ;
 
 use POE;
-use Zeta::POE::HTTPD;
+use Zeta::POE::HTTPD::JSON;
 
 use constant {
     DEBUG => $ENV{ZAPP_DEBUG} || 0,
@@ -18,7 +18,7 @@ BEGIN {
 sub {
     my $cfg = zkernel->zapp_config();
     warn "begin setup HTTPD..." if DEBUG;
-    Zeta::POE::HTTPD->spawn(
+    Zeta::POE::HTTPD::JSON->spawn(
          port   => $cfg->{main}->{port}, 
          module => 'ZAPP::Admin',
          para   => [ $cfg ],

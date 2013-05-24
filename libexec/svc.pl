@@ -31,7 +31,7 @@ sub {
     $cfg->{_stomp} = zkernel->zapp_stomp($cfg);
 
     # 构建service的POE session
-    Zeta::POE::HTTPD->spawn(
+    Zeta::POE::HTTPD::JSON->spawn(
         lfd    => $cfg->{service}->{lfd},
         module => 'ZAPP::Service',
         para   => [ $cfg ],
