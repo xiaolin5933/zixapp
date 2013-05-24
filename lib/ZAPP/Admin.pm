@@ -134,6 +134,11 @@ sub handle {
         status => 0,
     };
 
+    #
+    # if zkernel->prcess_count() > 16 , 
+    # { status => 1,  errmsg => 'resubmit it later, system busy' }
+    #
+
     # 下载文件
     if($req->{action} =~ /^down_file/) {
         my $name = 'Zbatch' . 
