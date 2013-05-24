@@ -47,6 +47,7 @@ if (DEBUG) {
     warn "debug date: $date";
 }
 
+
 # 开始
 &batch_mission($type);
 
@@ -74,6 +75,13 @@ sub batch_mission {
         warn "生成工作成功";
         exit 0;
     }
+
+    # 接下来程序处理下载与处理昨天的内部流水
+    $date =~ /(\d{4})-(\d{2})-(\d{2})/;
+    my $dt = DateTime->new(time_zone => 'local', year => $1, month => $2, day => $3);
+    # 接下来程序下载昨天的外部流水并生成内部流水
+    $dt->subtract(DateTime::Duration->new(days => 1));
+    $date = $dt->ymd('-');
 
     # 找出mission
     my $m = $batch->mission_type($type, $date);
