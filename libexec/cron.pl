@@ -21,9 +21,6 @@ unless($rtn) {
 unless(defined $type) {
     &usage();
 }
-unless($type =~ /(0002|0003|0004|0007|0009|0016|0017|prep)/) {
-    &usage();
-}
 
 # 加载配置
 my $cfg = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
@@ -54,7 +51,7 @@ if (DEBUG) {
 # help & prompt
 sub usage {
     print <<EOF;
-    cron.pl -t|--type [0002|0003|0004|0007|0009|0016|0017|prep]
+    cron.pl -t|--type [0002|0003|0004|0007|0009|0016|0017|...|prep]
 EOF
     exit 0;
 }
