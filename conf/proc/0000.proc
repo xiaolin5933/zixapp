@@ -1,0 +1,72 @@
+#!/usr/bin/perl
+use Zark::Constant;
+
+#
+# 特种调账单处理
+#
+# src:  {
+#     data => {
+#         cause    => $cause,
+#         period   => $period,
+#         jd_books => {
+#             "0" => {
+#                 d_book => { _type => 2005.01, BFJ_ACCT => 1, D => 1, ZJBD_DATE => 1, ZJBD_TYPE => 1 },
+#                 j_book => { _type => 1020.03, J => 1, ZJBD_DATE => 1, ZJBD_TYPE => 1, ZYZJ_ACCT => 1 },
+#             },
+#         },
+#     },
+#     svc  => "ad_acct",
+#     sys  => { oper_user => 1 },
+# }
+#
+#
+#
+sub {
+    my ($self,$src) = @_;
+
+
+    # 辅助变量
+    my $sth;                                                                  # sql语句句柄
+    my $period       = $src->{data}->{period};
+    my $yspz_flist   = $self->{meta}->[YSPZ]->{$src->{_type}}->[YSPZ_FLIST];  # 原始凭证字段列表
+
+    # 插入原始凭证
+    # 组织0000原始凭证 
+    my $source = {
+        _type   => '0000',
+        status  => '0',
+        cause   => $src->{data}->{cause},
+        period  => $period,
+
+    };
+    # 原始凭证
+    my $ys_id      = $self->yspz_ins_0000(@{$source}{@{$yspz_flist}});
+    $source->{id}  = $ys_id;
+
+    for my $idx (keys %{$src->{data}->{jd_books}}) {
+        my $jd = $src->{data}->{jd_books}->{$idx};
+        # 借 账本数据
+        my $j      = $jd->{j_book};
+        my $d      = $jd->{d_book};
+
+        my $j_dim  = $self->{meta}->[BOOK]->{$self->{meta}->[DICT]->[DICT_BOOK]->{$j->{_type}}->{value}}->[BOOK_FLIST];
+        my $d_dim  = $self->{meta}->[BOOK]->{$self->{meta}->[DICT]->[DICT_BOOK]->{$d->{_type}}->{value}}->[BOOK_FLIST];
+
+        # 插入分录: 借方记录, 贷方记录, 记账凭证
+        my @ys      = ($src->{_type}, $ys_id);
+        my $jzpz_id = $self->jzpz_id();
+        my @misc    = (@ys, $jzpz_id);
+
+        my $amt = $j->{j};
+        $j->{period} = $period;
+        $d->{period} = $period;
+        my $j_id  = $self->book_insert($j->{_type}, @{$j}{@{$j_dim}}, $amt, 0,    @misc);
+        my $d_id  = $self->book_insert($d->{_type}, @{$d}{@{$d_dim}}, 0,    $amt, @misc);
+        $self->jzpz($jzpz_id, $j_id, $d_id, $j->{_type}, $d->{_type}, @ys, $j->{fid}, $period);
+    }
+
+
+
+    return $source;
+    
+}
