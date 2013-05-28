@@ -1,5 +1,5 @@
 #!perl
-
+use feature qw/state/;
 
 
 #
@@ -40,6 +40,7 @@ sub {
     my $ch;                     # 预计资金变化
     my @sources;                # 原始凭证集合
     my $source;                 # 单个原始凭证
+    state $sth = $dbh->prepare("update job_dz set status = ? where type = ? and b_acct = ? and zjdz_date = ?");
     if ($req->{data}->{acct_type} == 1) {       # 备付金对账
         my $yhyf_txamt;         # 从汇总表获取 已核应付交易款
         my $yhys_txamt;         # 从汇总表获取 已核应收交易款
@@ -170,6 +171,12 @@ sub {
             destination => $svc->{stomp}->{queue}->{proc}, 
             body        => $svc->{serializer}->serialize($src) 
         });
+    }
+
+    # 如果发送给消息队列成功，那么对账成功
+    if ($status == 0) { 
+        $sth->execute('2', $req->{data}->{acct_type}, $req->{data}->{acct_id}, $req->{data}->{zjbd_date});
+        $svc->{dbh}->commit();
     }
     
     $ret->{status} = $status; 
