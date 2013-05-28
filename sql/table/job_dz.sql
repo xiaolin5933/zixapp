@@ -18,7 +18,7 @@ comment on column job_dz.id         is 'id';
 comment on column job_dz.zjdz_date  is '资金对账日期';
 comment on column job_dz.type       is '帐号类型; 1 备付金; 2 自有资金';
 comment on column job_dz.b_acct     is '帐号id';
-comment on column job_dz.status     is '对账状态; 1 成功;   -1 失败';
+comment on column job_dz.status     is '对账状态; 1 未处理; 2 成功; -1 失败';
 
 drop sequence seq_job_dz;
 create sequence seq_job_dz as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
