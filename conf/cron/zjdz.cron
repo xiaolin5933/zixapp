@@ -1,0 +1,2 @@
+# 每天早上0点4,5,6分生成当天对账任务
+#4,5,6 0  *   *   *     . $HOME/workspace/zixapp/etc/profile.mak; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/zjdz.pl >> $ZIXAPP_HOME/log/zjdz.log  2>&1
