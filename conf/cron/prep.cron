@@ -1,3 +1,2 @@
-# 每天早上0点1,2,3分准备今天的任务
-1,2,3 0  *   *   *     . $HOME/workspace/zixapp/etc/profile.mak; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t prep >> $ZIXAPP_HOME/log/cron.log  2>&1
-
+# 每个小时的第1分准备今天的任务
+#1  *  *   *   *     . $HOME/workspace/zixapp/etc/profile.mak; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t prep >> $ZIXAPP_HOME/log/cron.log  2>&1

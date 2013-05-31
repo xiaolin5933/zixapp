@@ -23,3 +23,6 @@ comment on column job_dz.status     is '对账状态; 1 未处理; 2 成功; -1 
 drop sequence seq_job_dz;
 create sequence seq_job_dz as bigint start with 1 increment by 1 minvalue 1 no maxvalue no cycle cache 200 order;
 
+
+-- create index
+create unique index idx_job_dz_0 on job_dz (zjdz_date, type, b_acct);
