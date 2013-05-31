@@ -1,5 +1,6 @@
+drop table dict_holi;
 create table dict_holi (
-    year     integer  not null,
+    year     integer  not null primary key,
     days     integer  not null,
     holiday  varchar(2048) not null
 ) in tbs_dat index in tbs_idx;
