@@ -46,12 +46,20 @@ sub gen_job {
     my $dbh  = &dbh();
     my $sths = &setup($dbh);
 
-    my $accts = $dbh->selectall_arrayref(q/select * from dim_acct/, { Slice => {} }); 
+    my $accts = $dbh->selectall_arrayref(q/select * from dim_bfj_acct where valid='1'/, { Slice => {} }); 
     for my $hs_acct (@$accts) {
         $sths->[SEQ]->execute();
         my ($id) = $sths->[SEQ]->fetchrow_array();
         $sths->[SEQ]->finish();
-        $sths->[INS]->execute($id, $date, $hs_acct->{sub_type}, $hs_acct->{sub_id}, 1); 
+        $sths->[INS]->execute($id, $date, '1', $hs_acct->{id}, 1); 
+    }
+
+    $accts = $dbh->selectall_arrayref(q/select * from dim_zyzj_acct where valid='1'/, { Slice => {} }); 
+    for my $hs_acct (@$accts) {
+        $sths->[SEQ]->execute();
+        my ($id) = $sths->[SEQ]->fetchrow_array();
+        $sths->[SEQ]->finish();
+        $sths->[INS]->execute($id, $date, '2', $hs_acct->{id}, 1); 
     }
     $dbh->commit();
 
