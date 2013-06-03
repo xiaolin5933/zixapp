@@ -1,0 +1,5 @@
+# 每个小时的第40分钟下载生成的昨天的流水并且处理0016凭证
+#40,41,42 *  *   *   *     . $HOME/workspace/zixapp/etc/profile.mak; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t 0016 >> $ZIXAPP_HOME/log/cron.log  2>&1
+
+# 每个小时的第42分钟下载生成的昨天的流水并且处理0017凭证
+#40,41,42 *  *   *   *     . $HOME/workspace/zixapp/etc/profile.mak; . $HOME/sqllib/db2profile; $ZIXAPP_HOME/libexec/cron.pl -t 0017 >> $ZIXAPP_HOME/log/cron.log  2>&1
