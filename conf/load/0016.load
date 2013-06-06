@@ -28,6 +28,7 @@ sub {
     #  13 lfee              | D00000000016
     #  14 psp_amt           | C00000107
     #  15 psp_lfee          | D00000000014
+    #  16 revg_code         | 00010344
     
 
     chomp;
@@ -110,6 +111,11 @@ sub {
 
     # 获取10项输出数组第一个数组
     my $matcher = $row->[3] == 1 ? $row->[2] . "*I*J" : $row->[2] . "*I*X";
+    
+    # 获取银联卡型：内卡、外卡
+    $matcher = $row->[16] eq '00010344' ? $matcher."*UO" : $matcher."*UI";
+    
+    
     my $res = $inst->calc( { amt  => $tx_amt, date => $stlmnt_date, matcher => $matcher, tx_date => $tx_date});
     
     

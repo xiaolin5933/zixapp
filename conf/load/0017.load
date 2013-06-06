@@ -29,6 +29,7 @@ sub {
 # 11  stlmnt_date   | 20130501
 # 12  bfee          | C00000630
 # 13  psp_amt       | D00000135
+# 14  revg_code     | 00010344
     chomp;
     my $row = [ split '\|', $_ ];
     my $tx_date=$row->[10];
@@ -83,6 +84,10 @@ sub {
     # 获取10项输出数组第一个数组
     # my $matcher = $row->[3] == 1 ? $row->[2] . "*S*J" : $row->[2] . "*S*X";
     my $matcher=$row->[2]."*O";
+    
+    # 获取银联卡型：内卡、外卡
+    $matcher = $row->[14] eq '00010344' ? $matcher."*UO" : $matcher."*UI";
+    
     my $res = $inst->calc( { amt => $tx_amt, date => $stlmnt_date,matcher=>$matcher, tx_date => $tx_date} );
     # Data::Dump->dump($res);
     #  warn "got bip result:[@$res]";
