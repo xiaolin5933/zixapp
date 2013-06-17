@@ -6,7 +6,7 @@ create table frule_d_sect (
     id       integer not null, 
 
     -- frule_entry_direct的ID
-    ed_id    integer not null,
+    e_id     integer not null,
 
     -- 区间ID, [开始，结束)
     begin    bigint  not null,

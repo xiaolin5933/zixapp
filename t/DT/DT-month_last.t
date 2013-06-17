@@ -8,7 +8,7 @@ use DateTime;
 plan tests => 20;
 
 my $cfg = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
-my $cfg->{dbh} = zkernel->zapp_dbh();
+my $cfg->{dbh} = zkernel->zdbh();
 my $zdt = ZAPP::DT->new($cfg);
 $cfg->{dbh}->rollback();
 $cfg->{dbh}->disconnect();

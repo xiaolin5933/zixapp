@@ -155,8 +155,11 @@ sub mission_type {
 # 返回指定类型的fname
 #
 sub fname {
-    my ($self, $type) = @_;
-    return $self->{load_cfg}{$type}{fname};
+    my ($self, $type, $date) = @_;
+    my $ext   = '.dat';
+    $self->{load_cfg}{$type}{fname} =~ /(.+)$ext/;
+    my $fname = $1;
+    return $fname . '-' . $date . $ext;
 }
 
 
@@ -222,9 +225,9 @@ sub down_file {
         $down->login(@{$row}{qw/user pass/})                or confess "can not login";
         $down->cwd($row->{rdir} . "/$date")                 or confess "can not cwd";
         $down->get('ok')                                    or confess "can not get ok file";
-        $down->get($self->fname($param->{type}))            or confess "can not get file";
+        $down->get($self->fname($param->{type}, $date))     or confess "can not get file";
         $down->quit;     
-        rename $self->fname($param->{type}), "$param->{type}.src" or confess "can not rename";
+        rename $self->fname($param->{type}, $date), "$param->{type}.src" or confess "can not rename";
     };
 
     #下载失败, 更新状态为下载失败

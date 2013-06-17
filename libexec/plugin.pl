@@ -38,7 +38,7 @@ $load ||= {};
 # 增加配置 - zark  - 凭证处理
 #
 $cfg->{svc}  = $svc;
-$cfg->{dbh}  = zkernel->zapp_dbh();
+$cfg->{dbh}  = zkernel->zdbh();
 $cfg->{zark} = Zark->new(dbh => $cfg->{dbh}, proc => $proc, setup => 0,);
 
 # 增加配置 - dt    : 时间管理

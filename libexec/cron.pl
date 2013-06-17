@@ -61,7 +61,7 @@ EOF
 ################################################
 sub batch_mission {
     my $type = shift;
-    $cfg->{dbh} = zkernel->zapp_dbh();
+    $cfg->{dbh} = zkernel->zdbh();
     my $batch = ZAPP::YSPZ::Batch->new($cfg);
  
     # 生成工作

@@ -124,12 +124,12 @@ sub {
         bi             => $res->[RES_BI],
         bfj_acct_bj    => $res->[RES_BJ][RES_BJ_ACCT],
         zjbd_date_out  => $res->[RES_BJ][RES_BJ_OUT],
-        bfj_acct_1     => $res->[RES_BFEE][0][RES_BFEE_NK_ACCT],
-        bfj_acct_2     => $res->[RES_BFEE][1][RES_BFEE_NK_ACCT],
-        zjbd_date_in_1 => $res->[RES_BFEE][0][RES_BFEE_NK_IN],
-        zjbd_date_in_2 => $res->[RES_BFEE][1][RES_BFEE_NK_IN],
-        bfee_1         => $res->[RES_BFEE][0][RES_BFEE_NK_I] || 0,
-        bfee_2         => $res->[RES_BFEE][1][RES_BFEE_NK_I] || 0,
+        bfj_acct_1     => $res->[RES_BFEE][0][RES_BFEE_BFJ_ACCT],
+        bfj_acct_2     => $res->[RES_BFEE][1][RES_BFEE_BFJ_ACCT],
+        zjbd_date_in_1 => $res->[RES_BFEE][0][RES_BFEE_BFJ_IN],
+        zjbd_date_in_2 => $res->[RES_BFEE][1][RES_BFEE_BFJ_IN],
+        bfee_1         => $res->[RES_BFEE][0][RES_BFEE_BFJ_I] || 0,
+        bfee_2         => $res->[RES_BFEE][1][RES_BFEE_BFJ_I] || 0,
 
         #从直联POS代清算收款反向交易数据项中取值
         period         => $stlmnt_date,

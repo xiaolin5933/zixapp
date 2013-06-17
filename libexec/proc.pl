@@ -16,18 +16,16 @@ BEGIN {
 
 sub {
  
-    #  重置dbh
-    zkernel->zapp_setup();
-
     # 获取配置
-    my $cfg = zkernel->zapp_config();
+    my $cfg = zkernel->zconfig();
+    $cfg->{dbh} = zkernel->zdbh();
    
     # zark重置 
     my $zark = $cfg->{zark};
     $zark->setup($cfg->{dbh});
 
     # 构建stomp客户端
-    my $stp = zkernel->zapp_stomp();
+    my $stp = zkernel->zstomp();
 
     # 订阅
     $stp->subscribe(

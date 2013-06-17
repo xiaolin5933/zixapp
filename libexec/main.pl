@@ -16,7 +16,7 @@ BEGIN {
 }
 
 sub {
-    my $cfg = zkernel->zapp_config();
+    my $cfg = zkernel->zconfig();
     warn "begin setup HTTPD..." if DEBUG;
     Zeta::POE::HTTPD::JSON->spawn(
          port   => $cfg->{main}->{port}, 

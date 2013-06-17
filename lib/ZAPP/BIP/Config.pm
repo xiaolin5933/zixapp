@@ -29,34 +29,36 @@ sub _init {
 
     # group,  g_ed, ed_sect汇总调整
     my $group   = $self->_load_frule_group();     # 协议ID           => \@规则组: [ { id => xxx, dir => xxx } ]
-    my $g_ed    = $self->_load_frule_entry_d();   # gid              => { id(条目) => xxx, hf => {} }
+    my $g_e     = $self->_load_frule_entry();     # gid              => { id(条目) => xxx }
     my $ed_sect = $self->_load_frule_d_sect();    # 直接确认条目ID   => \@直接确认条目-计算区间
+    my $ep_sect = $self->_load_frule_p_sect();    # 周期确认条目ID   => \@周期确认条目-计算区间
     for my $bip_id ( keys %$group) {
         my $grps = delete $group->{$bip_id};
         for my $grp (@$grps) {
             my $g_id  = $grp->{id};
             my $g_dir = $grp->{dir};
-            my $g_entries = $g_ed->{$g_id};        # 规则组
+            my $g_entries = $g_e->{$g_id};        # 规则组
 
             $group->{$bip_id}{group}{$g_id}{dir} = $g_dir;
             for my $entry (@$g_entries) {
-                $entry->{sect} = $ed_sect->{delete $entry->{id}};
-                push @{$group->{$bip_id}{group}{$g_id}{rules}}, $entry;
+                # 直接确认
+                if ($entry->{ack} == 1) {
+                    $entry->{sect} = $ed_sect->{delete $entry->{id}};
+                    push @{$group->{$bip_id}{group}{$g_id}{rules}}, $entry;
+                }
+                # 周期确认
+                elsif ($entry->{ack} == 2) {
+                    $entry->{sect} = $ep_sect->{delete $entry->{id}};
+                    push @{$group->{$bip_id}{group}{$g_id}{rules}}, $entry;
+                }
             }
         }
     }
     Data::Dump->dump($group) if DEBUG;
 
-    # 银行接口协议调整
+    # 银行接口协议
     my $bip = $self->_load_bip();
     warn "bip:\n" . Data::Dump->dump($bip)     if DEBUG;
-    for my $bi_id ( keys %$bip ) {
-        for ( @{$bip->{$bi_id}} ) {
-            $_->{group} = $group->{$_->{id}}->{group};
-            Data::Dump->dump($_) if DEBUG;
-        }
-    }
-    Data::Dump->dump($bip) if DEBUG;
 
     # 组dept_bi部分:  dept_bi + dfg
     my $dept_bi = $self->_load_dept_bi(); 
@@ -96,6 +98,42 @@ sub _init {
     }
     Data::Dump->dump($dept_bi) if DEBUG;
 
+    #
+    # 目标:
+    # {
+    #       $fp1 => {
+    #            ack_period => [
+    #               { 
+    #                   begin   => xxx, 
+    #                   end     => xxx, 
+    #                   ceiling => xxx,
+    #                   floor   => xxx,
+    #               },  # 日期区间1
+    #               { begin => xxx, end => xxx, },  # 日期区间2
+    #            ],
+    #
+    #            ack_type => 0,   # 1 包周期(月，年); 2 阶梯; 3 分段
+    #            ack_sect => [
+    #               { 
+    #                   begin => xxx, 
+    #                   end   => xxx,... 
+    #                   ratio => xxx,
+    #               } # 确认区间1
+    #               { 
+    #                   begin => xxx, 
+    #                   end   => xxx,... 
+    #                   ratio => xxx,
+    #               } # 确认区间2
+    #            ],
+    #            # 划付信息
+    #            hf => {},
+    #            round => xxx, 取整规则
+    #       },
+    #       $fp2 => {},   # 周期确认ID
+    # }
+    my $packs = $self->_load_frule_pack();
+     
+
     # 账号
     # 账号ID => { sub_type => xxx, sub_id => xxx }    
     my $acct = $self->_load_acct();            
@@ -106,6 +144,7 @@ sub _init {
         acct => $acct,
         dept => $dept_bi,
         bip  => $bip,
+        pack => $packs,
     };
 
     return $self;
@@ -126,6 +165,7 @@ sub inst {
         proto    => $config->{bip}{$bi},                            # 银行接口协议;
         acct     => $config->{acct},                                # 账号;
         matcher  => $config->{dept}{$dept_id}{$dept_bi}->{matcher}, # 协议匹配;
+        pack     => $config->{pack},                                # 确认规则;
     );
 }
 
@@ -166,6 +206,179 @@ EOF
 
     return \%data;
 
+}
+
+#
+# 返回值:
+#
+# {
+#       $fp1 => {
+#            ack_period => [
+#               { 
+#                   begin   => xxx, 
+#                   end     => xxx, 
+#                   ceiling => xxx,
+#                   floor   => xxx,
+#               },  # 日期区间1
+#               { begin => xxx, end => xxx, },  # 日期区间2
+#            ],
+#
+#            ack_type => 0,   # 1 包周期(月，年); 2 阶梯; 3 分段
+#            ack_sect => [
+#               { 
+#                   begin => xxx, 
+#                   end   => xxx,... 
+#                   ratio => xxx,
+#               } # 确认区间1
+#               { 
+#                   begin => xxx, 
+#                   end   => xxx,... 
+#                   ratio => xxx,
+#               } # 确认区间2
+#            ],
+#            # 划付信息
+#            hf => {},
+#       },
+#       $fp2 => {},   # 周期确认ID
+#       round => xx,  # 取整规则
+# }
+#
+sub _load_frule_pack {
+    my $self = shift;
+    my $dbh  = $self->{cfg}{dbh};
+    my $all;            # 所有的确认规则以及其
+    
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+select id,
+       ack_type,
+       type,
+       acct,
+       period,
+       delay,
+       nwd,
+       round
+from frule_pack
+
+EOF
+    };
+    if ($@) {
+        confess "can not select from frule_pack[$@]";
+    }
+
+    my $sects   = $self->_load_frule_pack_sect();
+    my $periods = $self->_load_frule_pack_period();
+
+    my %data;
+    for my $row ( @$all ) {
+        my $fp = {
+            ack_period  => $periods->{$row->{id}},
+            ack_type    => $row->{ack_type},
+            ack_sect    => $sects->{$row->{id}},
+            hf          => {
+                type    => $row->{type},
+                acct    => $row->{acct},
+                period  => $row->{period},
+                delay   => $row->{delay},
+                nwd     => $row->{nwd},
+            },
+            round       => $row->{round},
+        };
+        $data{$row->{id}} = $fp;
+    }
+
+    return \%data;
+}
+
+#
+# 返回值: 
+#
+# {
+#    $fp1 => [  # 指定确认规则的计算区间
+#        {
+#            begin  => xxx,
+#            end    => xxx,
+#            ratio  => xxx,
+#        },
+#        {},
+#        ...
+#    ]
+#    $fp2 => []
+#    ...
+# }
+#
+sub _load_frule_pack_sect {
+    my $dbh = shift->{cfg}{dbh};
+    my $all;            #
+
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+select fp_id, 
+       begin, 
+       end, 
+       ratio
+from frule_pack_sect order by fp_id, begin
+
+EOF
+    };
+    if ($@) {
+        confess "can not select from frule_pack_sect[$@]";
+    }
+
+
+
+    my %data;
+    for ( @$all ) {
+        push @{$data{delete $_->{fp_id}}}, $_;
+    }
+
+    return \%data;
+}
+
+#
+# 返回值: 
+#
+# {
+#    $fp1 => [
+#        {
+#            begin      => xxx,
+#            end        => xxx,
+#            ceiling    => xxx,
+#            floor      => xxx,
+#        },
+#        {},
+#        ...
+#    ],
+#    $fp2 => [],
+#    ...
+# }
+sub _load_frule_pack_period {
+    my $dbh = shift->{cfg}{dbh};
+    my $all;            # 所有的确认规则以及其
+
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+select fp_id, 
+       begin, 
+       end, 
+       ceiling, 
+       floor
+from frule_pack_period order by fp_id, begin
+
+EOF
+    };
+    if ($@) {
+        confess "can not select from frule_pack_period[$@]";
+    }
+
+
+
+    my %data;
+    for ( @$all ) {
+        push @{ $data{delete $_->{fp_id}} }, $_;
+    }
+
+    return \%data;
 }
 
 #
@@ -254,12 +467,39 @@ EOF
 }
 
 #
+# 规则条目
+# {
+#     $gid_1 => [
+#         { id  => $xxx, dir => $dir, ack => $ack, hf => {} },
+#         { id  => $xxx, dir => $dir, ack => $ack, hf => {} },
+#         { id  => $xxx, dir => $dir, ack => $ack, hf => {} },
+#         { id  => $xxx, ack => $ack, dir => $dir, fp_id => $fp_id },
+#         { id  => $xxx, ack => $ack, dir => $dir, fp_id => $fp_id },
+#     ],
+#     $gid_2 => [
+#     ],
+# }
+#
+sub _load_frule_entry {
+    my $self = shift;
+
+    my $eds  = $self->_load_frule_entry_d(); 
+    my $eps  = $self->_load_frule_entry_p();
+
+    for my $gid (keys %$eds)   {
+        push @{$eps->{$gid}}, @{$eds->{$gid}};
+    }
+
+    return $eps; 
+}
+
+#
 # 直接确认规则条目
 # {
 #     $gid_1 => [
-#         { id  => $xxx, hf => {} },
-#         { id  => $xxx, hf => {} },
-#         { id  => $xxx, hf => {} },
+#         { id  => $xxx, dir => $dir, ack => $ack, hf => {} },
+#         { id  => $xxx, dir => $dir, ack => $ack, hf => {} },
+#         { id  => $xxx, dir => $dir, ack => $ack, hf => {} },
 #     ],
 #     $gid_2 => [
 #     ],
@@ -273,6 +513,7 @@ sub _load_frule_entry_d {
 select 
     frule_entry.id,
     gid,
+    ack,
     dir,
     type,
     acct,
@@ -280,10 +521,8 @@ select
     delay,
     nwd
 from 
-    frule_entry 
-left join 
-    frule_entry_d 
-on 
+    frule_entry, frule_entry_d 
+where 
     frule_entry.id = frule_entry_d.id
 EOF
     };
@@ -295,7 +534,52 @@ EOF
         my $id  = delete $_->{id}; 
         my $gid = delete $_->{gid}; 
         my $dir = delete $_->{dir};
-        push @{$g_ed{$gid}}, { id => $id, dir => $dir, hf => $_ };
+        my $ack = delete $_->{ack};
+        push @{$g_ed{$gid}}, { id => $id, dir => $dir, ack => $ack, hf => $_ };
+    }
+    return \%g_ed;
+}
+
+#
+# 直接确认规则条目
+# {
+#     $gid_1 => [
+#         { id  => $xxx, ack => $ack, dir => $dir, ack_id => $fp_id },
+#         { id  => $xxx, ack => $ack, dir => $dir, ack_id => $fp_id },
+#         { id  => $xxx, ack => $ack, dir => $dir, ack_id => $fp_id },
+#     ],
+#     $gid_2 => [
+#     ],
+# }
+#
+sub _load_frule_entry_p {
+    my $dbh = shift->{cfg}{dbh};
+    my $all;
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+select 
+    frule_entry.id,
+    gid,
+    ack,
+    dir,
+    fp_id
+from 
+    frule_entry, frule_entry_p 
+where 
+    frule_entry.id = frule_entry_p.id
+EOF
+    };
+    if ($@) {
+        confess "can not select from frule_entry[$@]";
+    }
+    my %g_ed;
+    for (@$all) {
+        my $id    = delete $_->{id};
+        my $gid   = delete $_->{gid};
+        my $dir   = delete $_->{dir};
+        my $ack   = delete $_->{ack};
+        my $fp_id = delete $_->{fp_id};
+        push @{$g_ed{$gid}}, { id => $id, ack => $ack, dir => $dir, ack_id => $fp_id };
     }
     return \%g_ed;
 }
@@ -303,7 +587,7 @@ EOF
 #
 #  entry_d的ID
 # {
-#    $ed_id => {
+#    $e_id => {
 #        begin => xxx
 #        end   => xxx
 #        ...  
@@ -317,7 +601,7 @@ sub _load_frule_d_sect {
         $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
 select
     id,
-    ed_id,
+    e_id,
     begin,
     end,
     mode,
@@ -328,17 +612,61 @@ select
 from 
     frule_d_sect
 order by
-    ed_id,
+    e_id,
     begin asc
 EOF
    };
-   if ($@) {
-       confess "can not select from frule_d_sect[$@]";
-   }
+    if ($@) {
+        confess "can not select from frule_d_sect[$@]";
+    }
 
     my %d_sect;
     for (@$all) {
-        push @{$d_sect{delete $_->{ed_id}}}, $_;
+        push @{$d_sect{delete $_->{e_id}}}, $_;
+    }
+
+    return \%d_sect;
+}
+
+#
+#  entry_p的ID
+# {
+#    $ep_id => {
+#        begin => xxx
+#        end   => xxx
+#        ...  
+#    }         
+# }
+#
+sub _load_frule_p_sect {
+    my $dbh = shift->{cfg}{dbh};
+    my $all;
+    eval {
+        $all = $dbh->selectall_arrayref(<<EOF, { Slice => {} });
+select
+    id,
+    e_id,
+    begin,
+    end,
+    mode,
+    ratio,
+    ceiling,
+    floor,
+    quota 
+from 
+    frule_p_sect
+order by
+    e_id,
+    begin asc
+EOF
+    };
+    if ($@) {
+        confess "can not select from frule_p_sect[$@]";
+    }
+
+    my %d_sect;
+    for (@$all) {
+        push @{$d_sect{delete $_->{e_id}}}, $_;
     }
 
     return \%d_sect;
@@ -450,45 +778,85 @@ __END__
 #                     bjhf  =>
 #                     round =>
 #
-#                     # 规则组
-#                     group => {
-#                         gid-1 => {
-#                              dir   => $dir,     # 入 / 出 
-#                              rules => [         # 规则数组
-#                                 规则1
-#                                 { 
-#                                     dir  => $dir # 入 / 出
-#                                     hf   => { ... },  # 划付信息
-#                                     sect => [         # 计算区间
-#                                         { begin => xxx, end => xxx, ... }, # 区间1
-#                                         { begin => xxx, end => xxx, ... }, # 区间2
-#                                     ]
-#                                 },
-#                                 规则N
-#                                 { ... },  
-#                             ],
-#                         },
-#                         gid-2 => {},
-#                     },
 #                 }
 #                 { ... },   # 协议N
 #             ],
 #             $bi_N => [ ... ],
 #         },
 #
+#         # 周期确认 - 确认规则
+#         pack => {
+#             1 => {
+#                 ack_period => [
+#                     { 
+#                         begin   => xxx, 
+#                         end     => xxx, 
+#                         ceiling => xxx,
+#                         floor   => xxx,
+#                     },  # 日期区间1
+#                     { begin => xxx, end => xxx, },  # 日期区间2
+#                 ],
+#
+#                 ack_type => 1,   # 1 包周期(月，年); 2 阶梯; 3 分段
+#                 ack_sect => [
+#                     { 
+#                         begin => xxx, 
+#                         end   => xxx,... 
+#                         ratio => xxx,
+#                     } # 确认区间1
+#                     { 
+#                         begin => xxx, 
+#                         end   => xxx,... 
+#                         ratio => xxx,
+#                     } # 确认区间2
+#                 ],
+#                 # 划付信息
+#                 hf => {},
+#                 # 取整规则
+#                 round => xxx,
+#             },
+#             2 => {},   # 周期确认ID
+#         },
+#
 #         # dept_bi
-#         dept_bi => {
+#         dept => {
 #             $dept_id => {
 #                 $dept_bi" => {
 #                     bi      => $bi,   # 银行接口
 #                     matcher   => {
-#                         $matcher1 => {
-#                             $bip => {},  # 规则组
+#                         $matcher1 => {        # 规则组
+#                             $bip => {
+#                                   dir   => $dir,     # 入 / 出 
+#                                   rules => [         # 规则数组
+#                                       规则1-直接确认
+#                                       { 
+#                                           ack  => 1
+#                                           dir  => $dir # 入 / 出
+#                                           hf   => { ... },  # 划付信息
+#                                           sect => [         # 计算区间
+#                                               { begin => xxx, end => xxx, ... }, # 区间1
+#                                               { begin => xxx, end => xxx, ... }, # 区间2
+#                                           ]
+#                                       },
+#                                       规则N-周期确认
+#                                       { 
+#                                           ack  => 2,
+#                                           dir  => $dir,
+#                                           sect => [  # 暂估阶段用
+#                                               { begin => xxx, end => xxx, ... }, # 区间1
+#                                               { begin => xxx, end => xxx, ... }, # 区间2
+#                                           ],
+#                                           ack_id => 1,  # 确认规则ID
+#                                       },
+#                                   ],
+#                             },
 #                         },
 #                     },
 #                 },
-#             }
-#         }
+#             },
+#         },
+#
+#
 #     }
 # }
 #

@@ -7,7 +7,7 @@ use DateTime;
 plan tests => 26;
 
 do "$ENV{ZIXAPP_HOME}/libexec/plugin.pl";
-my $dbh = zkernel->zapp_dbh();
+my $dbh = zkernel->zdbh();
 my $zdt = ZAPP::DT->new( dbh => $dbh );
 
 ok $zdt->quarter_last('2013-01-27') eq '2013-03-31';

@@ -6,7 +6,7 @@ do "$ENV{ZIXAPP_HOME}/libexec/plugin.pl";
 zkernel->load_plugin('dbh');
 zkernel->init_plugin('dbh', undef);
 
-my $dbh = zkernel->zapp_dbh();
+my $dbh = zkernel->zdbh();
 
 my $dbm = ZAPP::DBM->new( dbh => $dbh);
 

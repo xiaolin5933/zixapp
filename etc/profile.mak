@@ -1,4 +1,4 @@
-export ZETA_HOME=$HOME/workspace/zeta
+export ZETA_HOME=$HOME/opt/zeta
 export ZARK_HOME=$HOME/workspace/zark
 export ZIXAPP_HOME=$HOME/workspace/zixapp
 export PERL5LIB=$ZETA_HOME/lib:$ZARK_HOME/lib:$ZIXAPP_HOME/lib

@@ -17,18 +17,17 @@ BEGIN {
 }
 
 sub {
-    # 重置dbh
-    zkernel->zapp_setup();
 
     # 获取配置
-    my $cfg = zkernel->zapp_config();
+    my $cfg = zkernel->zconfig();
+    $cfg->{dbh} = zkernel->zdbh();
 
     # 重置zark
     my $zark = $cfg->{zark};
     $zark->setup($cfg->{dbh});
 
     # 连接stomp
-    $cfg->{_stomp} = zkernel->zapp_stomp($cfg);
+    $cfg->{_stomp} = zkernel->zstomp($cfg);
 
     # 构建service的POE session
     Zeta::POE::HTTPD::JSON->spawn(

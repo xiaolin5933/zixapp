@@ -1,5 +1,5 @@
 --
--- 直接确认规则总表
+-- 直接确认-计算规则总表
 --
 drop   table frule_entry_d;
 create table frule_entry_d (
@@ -22,10 +22,10 @@ create table frule_entry_d (
 
 ) in tbs_dat index in tbs_idx;
 
-comment on table  frule_entry_d        is '直接确认规则条目表';
+comment on table  frule_entry_d        is '直接确认-计算规则总表';
 
 --
-comment on column frule_entry_d.id     is '直接确认规则ID-关联frule_entry的ID';
+comment on column frule_entry_d.id     is '直接确认计算规则ID-关联frule_entry的ID';
 
 -- 划付信息
 comment on column frule_entry_d.type    is '划付类型，1: 财务划付， 2: 非财务划付';

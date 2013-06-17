@@ -47,25 +47,15 @@ sub {
     my $bfj_bfee        = 0;
     my $bfj_acct_bfee;
     my $zjbd_date_out;
-    # 内扣有值时
-    if ($res->[RES_BFEE][0][RES_BFEE_NK_O]) {
-        $bfj_bfee       = $res->[RES_BFEE][0][RES_BFEE_NK_O];
+    # 备付金付银行手续费
+    if ($res->[RES_BFEE][0][RES_BFEE_BFJ_O]) {
+        $bfj_bfee       = $res->[RES_BFEE][0][RES_BFEE_BFJ_O];
     }
-    if ($res->[RES_BFEE][0][RES_BFEE_NK_ACCT]) {
-        $bfj_acct_bfee  = $res->[RES_BFEE][0][RES_BFEE_NK_ACCT];
+    if ($res->[RES_BFEE][0][RES_BFEE_BFJ_ACCT]) {
+        $bfj_acct_bfee  = $res->[RES_BFEE][0][RES_BFEE_BFJ_ACCT];
     }
-    if ($res->[RES_BFEE][0][RES_BFEE_NK_OUT]) {
-        $zjbd_date_out  = $res->[RES_BFEE][0][RES_BFEE_NK_OUT];
-    }
-    # 外扣有值时
-    if ($res->[RES_BFEE][0][RES_BFEE_WK_O]) {
-        $bfj_bfee       = $res->[RES_BFEE][0][RES_BFEE_WK_O];
-    }
-    if ($res->[RES_BFEE][0][RES_BFEE_WK_ACCT]) {
-        $bfj_acct_bfee  = $res->[RES_BFEE][0][RES_BFEE_WK_ACCT];
-    }
-    if ($res->[RES_BFEE][0][RES_BFEE_WK_OUT]) {
-        $zjbd_date_out  = $res->[RES_BFEE][0][RES_BFEE_WK_OUT];
+    if ($res->[RES_BFEE][0][RES_BFEE_BFJ_OUT]) {
+        $zjbd_date_out  = $res->[RES_BFEE][0][RES_BFEE_BFJ_OUT];
     }
     
     $bfj_bfee       ||= 0;

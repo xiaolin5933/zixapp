@@ -32,8 +32,8 @@ sub child {
     my $req = shift;
 
     # 子进程重置, 需要dbh重置
-    zkernel->zapp_setup();
-    my $cfg = zkernel->zapp_config;
+    my $cfg = zkernel->zconfig;
+    $cfg->{dbh} = zkernel->zdbh();
     $cfg->{batch}->setup();
 
     warn "---------------";
@@ -138,11 +138,13 @@ sub handle {
     # if zkernel->prcess_count() > 16 , 
     # { status => 1,  errmsg => 'resubmit it later, system busy' }
     #
+    my $date = $req->{param}{date};
+    $date =~ s/-//g if $date;
 
     # 下载文件
     if($req->{action} =~ /^down_file/) {
         my $name = 'Zbatch' . 
-                   '-' . $req->{param}{date} .
+                   '-' . $date .
                    '-' . $req->{param}{type} .
                    '-' . 'down';
         my $rtn = zkernel->process_submit(
@@ -158,7 +160,7 @@ sub handle {
     # 分配任务
     elsif($req->{action} =~ /^assign_job/) {
         my $name = 'Zbatch' . 
-                   '-' . $req->{param}{date} .
+                   '-' . $date . 
                    '-' . $req->{param}{type} .
                    '-' . 'assign';
         my $rtn = zkernel->process_submit(
@@ -175,7 +177,7 @@ sub handle {
     elsif ($req->{action} =~ /^run_job/) {
         my $job = $self->{cfg}{batch}->job($req->{param}{job_id});
         my $name = 'Zbatch' . 
-                   '-' . $req->{param}{date} .
+                   '-' . $date . 
                    '-' . $req->{param}{type} .
                    '-' . 'load' .
                    '-' . $job->{index};
@@ -198,7 +200,7 @@ sub handle {
         for (@$jobs) {
 
             my $name = 'Zbatch' .
-                       '-' . $req->{param}{date} .
+                       '-' . $date .
                        '-' . $req->{param}{type} .
                        '-' . 'load' .
                        '-' . $_->{index};

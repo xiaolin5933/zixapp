@@ -102,12 +102,12 @@ sub setup {
     my $svc = shift;
     my $cfg  = do "$ENV{ZIXAPP_HOME}/conf/zixapp.conf";
     my $proc = do "$ENV{ZIXAPP_HOME}/conf/proc.conf";
-    $cfg->{dbh}  = zkernel->zapp_dbh();
+    $cfg->{dbh}  = zkernel->zdbh();
     $cfg->{zark} = Zark->new(dbh => $cfg->{dbh}, proc => $proc, setup => 1);
     $cfg->{dt}   = ZAPP::DT->new($cfg);
     $cfg->{bip}  = ZAPP::BIP::Config->new($cfg);
     $cfg->{svc}  = $svc;
-    $cfg->{_stomp} = zkernel->zapp_stomp();
+    $cfg->{_stomp} = zkernel->zstomp();
     my $service  = ZAPP::Service->new($cfg);
     return $service;
 }
