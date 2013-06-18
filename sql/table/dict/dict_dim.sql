@@ -26,6 +26,7 @@ insert into dict_dim(dim, name) values
 ( 'c', '客户id' ),
 ( 'cust_proto', '客户协议' ),
 ( 'e_date', '差错日期' ),
+( 'fp', '周期确认规则' ),
 ( 'p', '产品id' ),
 ( 'period', '期间日期' ),
 ( 'tx_date', '交易日期' ),

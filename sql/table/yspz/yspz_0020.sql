@@ -10,14 +10,12 @@ create table yspz_0020 (
     status                char(1) not null,
 
 -- 业务字段
-    bfj_acct_bj           integer not null,
     bi                    integer not null,
     wlzj_type             integer not null,
     p                     integer not null,
     period                date not null,
-    zjbd_date_out_bj      date not null,
     tx_date               date not null,
-    ssn                   char(32) not null,
+    ssn                   char(32) not null unique,
     c                     char(32) not null,
     cust_proto            char(32) not null,
     tx_amt                bigint not null,
@@ -42,12 +40,10 @@ create table yspz_0020 (
 comment on column yspz_0020.id                   is '原始凭证id';
 comment on column yspz_0020.status               is '原始凭证处理状态. 0:  未处理   1: 处理成功   2: 处理失败。';
 
-comment on column yspz_0020.bfj_acct_bj          is '本金备付金银行账号';
 comment on column yspz_0020.bi                   is '银行接口编号';
 comment on column yspz_0020.wlzj_type            is '往来类型 - 客户手续费';
 comment on column yspz_0020.p                    is '产品类型';
 comment on column yspz_0020.period               is '会计期间';
-comment on column yspz_0020.zjbd_date_out_bj     is '本金备付金银行出账日期';
 comment on column yspz_0020.tx_date              is '交易日期';
 comment on column yspz_0020.ssn                  is '交易流水编号';
 comment on column yspz_0020.c                    is '客户编号';

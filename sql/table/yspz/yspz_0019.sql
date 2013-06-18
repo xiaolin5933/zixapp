@@ -19,7 +19,7 @@ create table yspz_0019 (
     zjbd_date_out_bj      date not null,
     zjbd_date_out         date,
     tx_date               date not null,
-    ssn                   char(32) not null,
+    ssn                   char(32) not null unique,
     c                     char(32) not null,
     cust_proto            char(32) not null,
     tx_amt                bigint not null,
