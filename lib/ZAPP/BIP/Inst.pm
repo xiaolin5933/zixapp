@@ -2,6 +2,7 @@ package ZAPP::BIP::Inst;
 use strict;
 use warnings;
 use Carp;
+use DateTime;
 use ZAPP::BIP::Constant;
 use constant {
     DEBUG       =>  $ENV{ZAPP_BIP_INST_DEBUG} || 0,
@@ -80,21 +81,23 @@ sub calc {
     my ($self, $req) = @_;
     $req->{matcher} ||= '-1';
 
-    # 查找协议
-    return unless my $proto = $self->_find_proto($req);
-    warn "INFO>: 找到协议:\n" . Data::Dump->dump($proto) if DEBUG;
-
-    # 查找规则组
-    return unless my $group = $self->_find_group($req, $proto);   
-    warn "INFO>: 找到规则组:\n" . Data::Dump->dump($group)  if DEBUG;
-
     # 返回值
     my @res; 
 
-    # 第一部分: 输出接口
+    #### 第一部分: 输出接口
     $res[RES_BI] = $self->{bi};
 
-    # 第二部分: 输出本金信息(5项)
+    # 如果没有找到协议或者是协议组，那么直接返回银行接口
+    # 查找协议
+    return \@res unless my $proto = $self->_find_proto($req);
+    warn "INFO>: 找到协议:\n" . Data::Dump->dump($proto) if DEBUG;
+
+    # 查找规则组
+    return \@res unless my $group = $self->_find_group($req, $proto);   
+    warn "INFO>: 找到规则组:\n" . Data::Dump->dump($group)  if DEBUG;
+
+
+    #### 第二部分: 输出本金信息(5项)
     $res[RES_BJ][RES_BJ_ACCT] = $proto->{bjhf}->{acct};
     if ($group->{dir} == BJ_DIR_IN ) {  
         $res[RES_BJ][RES_BJ_I]  = $req->{amt};
@@ -109,7 +112,7 @@ sub calc {
         return;
     }
 
-    # 第三部分: 输出手续费信息数组
+    #### 第三部分: 输出手续费信息数组
     for my $rule (@{$group->{rules}}) {
         my $bfee = $self->_bfee($req, $proto, $rule);
         warn "不能计算手续费" and return unless defined $bfee;
@@ -165,7 +168,7 @@ sub calc {
 #           交易日期3  => 暂估手续费3,
 #           ...
 #      },
-#      sm_date   => '扫描日期',
+#      sm_date   => '扫描日期(不能 >= 当前日期)',
 #  }
 #
 #  res =   [
@@ -184,6 +187,15 @@ sub calc {
 #  ]
 sub verify {
     my ($self, $req) = @_; 
+
+    # 扫描日期不能 >= 当前日期
+    my $dt = DateTime->now('time_zone' => 'local');
+    my $date = $dt->ymd('-');
+    if ($req->{sm_date} >= $date) {
+        warn "sm_date >= now date" if DEBUG;
+        return;
+    }    
+
     # 找周期确认规则
     my $fp = $self->_find_frule_pack($req);
     unless ($fp) {
@@ -218,7 +230,7 @@ sub verify {
     my $period_final = $self->_find_final_period($fp);
     unless (defined $period_final) {
         warn "can not get last period for ack_id [$req->{ack_id}]" if DEBUG;
-        warn;
+        return;
     }
     # 根据总额大小
     $bfee_rec = $self->_ack_bfee_ret($req, $fp, $period_final, $bfee);           # 手续费划付信息
