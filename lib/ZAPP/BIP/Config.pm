@@ -158,15 +158,26 @@ sub inst {
 
     my $config = $self->{config};
 
-    my $bi = $config->{dept}{$dept_id}{$dept_bi}->{bi};      # 银行接口编号; 
-    return ZAPP::BIP::Inst->new(
-        cfg      => $self->{cfg},
-        bi       => $bi,
-        proto    => $config->{bip}{$bi},                            # 银行接口协议;
-        acct     => $config->{acct},                                # 账号;
-        matcher  => $config->{dept}{$dept_id}{$dept_bi}->{matcher}, # 协议匹配;
-        pack     => $config->{pack},                                # 确认规则;
-    );
+    my $bi;
+    if (defined $dept_id && defined $dept_bi) {
+        $bi = $config->{dept}{$dept_id}{$dept_bi}->{bi};      # 银行接口编号; 
+        return ZAPP::BIP::Inst->new(
+            cfg      => $self->{cfg},
+            bi       => $bi,
+            proto    => $config->{bip}{$bi},                            # 银行接口协议;
+            acct     => $config->{acct},                                # 账号;
+            matcher  => $config->{dept}{$dept_id}{$dept_bi}->{matcher}, # 协议匹配;
+            pack     => $config->{pack},                                # 确认规则;
+        );
+    }
+    else {
+        # 如果部门id 或 部门bi 任意一个没有的话，那么就没有对应的内部bi 
+        return ZAPP::BIP::Inst->new(
+            cfg      => $self->{cfg},
+            acct     => $config->{acct},                                # 账号;
+            pack     => $config->{pack},                                # 确认规则;
+        );
+    }
 }
 
 

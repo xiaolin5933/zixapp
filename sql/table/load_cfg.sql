@@ -27,4 +27,5 @@ insert into load_cfg(type, host, user, pass, rdir, fname) values
     ('0007', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund',      'fund-0007.dat'),
     ('0009', '127.0.0.1', 'cain', 'cain', 'tmp/data/fund',      'fund-0009.dat'),
     ('0016', '127.0.0.1', 'cain', 'cain', 'tmp/data/pos-hn',    'pos-hn-0016.dat'),
-    ('0017', '127.0.0.1', 'cain', 'cain', 'tmp/data/pos-hn',    'pos-hn-0017.dat');
+    ('0017', '127.0.0.1', 'cain', 'cain', 'tmp/data/pos-hn',    'pos-hn-0017.dat'),
+    ('0031', '127.0.0.1', 'cain', 'cain', 'tmp/data/pack',      'pack-0031.dat');

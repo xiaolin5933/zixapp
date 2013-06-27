@@ -194,7 +194,7 @@ sub verify {
     # 扫描日期不能 >= 当前日期
     my $dt = DateTime->now('time_zone' => 'local');
     my $date = $dt->ymd('-');
-    if ($req->{sm_date} >= $date) {
+    if ($req->{sm_date} ge $date) {
         warn "sm_date >= now date" if DEBUG;
         return;
     }    
@@ -312,19 +312,19 @@ sub _find_frule_pack_period {
     my $period; 
     my $index = -1;
     my $sm_date = $req->{sm_date};
-    for my $ap ($fp->{ack_period}) {
+    for my $ap (@{$fp->{ack_period}}) {
         ++$index;
         # 如果扫描日期是周期最后一天， 那么就是此周期
-        if ($sm_date == $ap->{end}) {
+        if ($sm_date eq $ap->{end}) {
             $period = $ap;
             last;
         }
         # 如果扫描日期大于周期最后一天，那么看下一个周期
-        elsif ($sm_date > $ap->{end}) {
+        elsif ($sm_date gt $ap->{end}) {
             next;
         }
         # 如果扫描日期小于周期最后一天，说明落于当前周期间
-        elsif ($sm_date < $ap->{end}) {
+        elsif ($sm_date lt $ap->{end}) {
             # 那么如果当前至少是第2个周期内，那么用前一周期作为已查到周期
             if ($index > 0) {
                 $period = $fp->{ack_period}[$index - 1];
@@ -382,7 +382,7 @@ sub _zg_bfee {
     # 满足指定周期的暂估手续费
     my $bfee = 0;
     for my $tx_date (keys %{$req->{zg_bfee}}) {
-        $bfee += $req->{zg_bfee}{$tx_date} if $tx_date >= $period->{begin} && $tx_date <= $period->{end};
+        $bfee += $req->{zg_bfee}{$tx_date} if $tx_date ge $period->{begin} && $tx_date le $period->{end};
     }
     return $bfee;
 }
