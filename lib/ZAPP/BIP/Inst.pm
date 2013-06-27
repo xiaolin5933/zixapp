@@ -79,6 +79,9 @@ sub new {
 sub calc {
 
     my ($self, $req) = @_;
+    unless (defined $req) {
+        $req = {};
+    }
     $req->{matcher} ||= '-1';
 
     # 返回值
@@ -521,6 +524,10 @@ sub _find_group {
 sub _find_proto {
 
     my ($self, $req) = @_;
+    unless (defined $req->{date}) {
+        warn "req->{date} is undefined" if DEBUG;
+        return;
+    }
     my $proto = $self->{cache}->{$req->{date}};
     unless ( $proto ) {
 
@@ -535,7 +542,7 @@ sub _find_proto {
             }
         }
         unless($proto) {
-            warn "ERROR: 没有合适协议, 清算日期[$req->{date}]";
+            warn "ERROR: 没有合适协议, 清算日期[$req->{date}]" if DEBUG;
             return;
         }        
  

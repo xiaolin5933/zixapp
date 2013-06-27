@@ -117,6 +117,15 @@ sub child {
 # }
 #
 #
+# 6:  pack
+# {
+#    action => 'pack',
+#    param  => {
+#        sm_date    => $sm_date,        # 扫描日期(不能 >= 当前日期)
+#        ack_id     => $ack_id,         # 确认规则ID
+#    }
+#
+# }
 #
 # result:
 # {
@@ -225,6 +234,24 @@ sub handle {
     }
     elsif ( $req->{action} =~ /get_log/ ) {
         $rtn->{ret} = $self->{cfg}{batch}->get_log($req->{param});
+    }
+    elsif ( $req->{action} =~ /pack/ ) {
+        my $job = $self->{cfg}{batch}->job($req->{param}{job_id});
+        my $name = 'Zbatch' .
+                   '-' . $date .
+                   '-' . $req->{param}{type} .
+                   '-' . 'load' .
+                   '-' . $job->{index};
+        my $rtn = zkernel->process_submit(
+            $name,
+            {
+               code => \&child,
+               para => [ $req ],
+               reap => 0,
+               size => 1,
+            },
+        );
+        $rtn->{ret} = $self->{cfg}{pack}->ack($req->{param});
     }
     else {
         zkernel->error("invalid action[$req->{action}]");

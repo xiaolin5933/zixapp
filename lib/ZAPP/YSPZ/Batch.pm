@@ -137,8 +137,8 @@ sub job {
 # 找出指定id的mission记录
 #
 sub mission {
-    my ($self, $type) = @_;
-    $self->{sel_m}->execute($type);
+    my ($self, $id) = @_;
+    $self->{sel_m}->execute($id);
     return $self->{sel_m}->fetchrow_hashref();
 }
 
@@ -155,11 +155,16 @@ sub mission_type {
 # 返回指定类型的fname
 #
 sub fname {
-    my ($self, $type, $date) = @_;
+    my ($self, $type, $date, $isext) = @_;
     my $ext   = '.dat';
     $self->{load_cfg}{$type}{fname} =~ /(.+)$ext/;
     my $fname = $1;
-    return $fname . '-' . $date . $ext;
+    if ($isext) {
+        return $fname . '-' . $date . $ext;
+    }
+    else {
+        return $fname . '-' . $date;
+    }
 }
 
 
@@ -192,6 +197,19 @@ sub prep_mission {
     return $self;
 }
 
+#
+# 插入load_mission记录
+#
+sub insert_mission {
+    my ($self, $type, $date, $total, $fail, $succ, $status) = @_;
+
+    my $id = $self->_mission_id();
+    $self->{ins_m}->execute($id, $type, $date,
+                            $total, $fail, $succ, $status, undef);
+
+    return $id;
+}
+
 
 #
 # 下载文件
@@ -217,6 +235,7 @@ sub down_file {
 
     # 转到数据所在日期目录  
     chdir "$ENV{ZIXAPP_HOME}/data/$date";
+    my $ok_file = 'ok.' . $self->fname($param->{type}, $date);
    
     # 根据load_cfg下载文件 
     my $row = $self->{load_cfg}{$param->{type}};
@@ -224,10 +243,10 @@ sub down_file {
         my $down = Net::FTP->new($row->{host})              or confess "can not Net::FTP->new";
         $down->login(@{$row}{qw/user pass/})                or confess "can not login";
         $down->cwd($row->{rdir} . "/$date")                 or confess "can not cwd";
-        $down->get('ok')                                    or confess "can not get ok file";
-        $down->get($self->fname($param->{type}, $date))     or confess "can not get file";
+        $down->get($ok_file)                                or confess "can not get ok file";
+        $down->get($self->fname($param->{type}, $date, 1))  or confess "can not get file";
         $down->quit;     
-        rename $self->fname($param->{type}, $date), "$param->{type}.src" or confess "can not rename";
+        rename $self->fname($param->{type}, $date, 1), "$param->{type}.src" or confess "can not rename";
     };
 
     #下载失败, 更新状态为下载失败
@@ -241,7 +260,7 @@ sub down_file {
 
     # 更新状态为下一步: 可分配
     # 如果存在ok文件，说明已经完全在ftp服务器上准备好文件了，下下来的文件可以正常使用, 状态为可分配
-    if (-e "ok") {
+    if (-e $ok_file ) {
         $self->{upd_m}->execute(MISSION_ASSIGNABLE, 0, 0, 0, $param->{mission_id});
         $self->{cfg}{dbh}->commit();
     }

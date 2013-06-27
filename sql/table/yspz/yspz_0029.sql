@@ -15,6 +15,7 @@ create table yspz_0029 (
     bi                    integer not null,
     p                     integer not null,
     fp                    integer not null,
+    tx_type               integer not null,
     period                date not null,
     zjbd_date_out_bj      date not null,
     zjbd_date_out         date not null,
@@ -47,6 +48,7 @@ comment on column yspz_0029.bfj_acct             is '备付金内扣银行账号
 comment on column yspz_0029.bi                   is '银行接口编号';
 comment on column yspz_0029.p                    is '产品类型 - 结算';
 comment on column yspz_0029.fp                   is '确认规则';
+comment on column yspz_0029.tx_type              is '交易类型';
 comment on column yspz_0029.period               is '会计期间';
 comment on column yspz_0029.zjbd_date_out_bj     is '本金备付金银行出账日期';
 comment on column yspz_0029.zjbd_date_out        is '备付金内扣银行出账日期';

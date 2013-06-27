@@ -8,6 +8,7 @@ use Zark;
 use ZAPP::BIP::Config;
 use ZAPP::YSPZ::Batch;
 use Net::Stomp;
+use ZAPP::PACK::Ack;
 
 use constant {
     DEBUG => $ENV{ZAPP_DEBUG} || 0,
@@ -35,20 +36,22 @@ $load ||= {};
 #
 # svc配置  - svc   - 服务开发
 # 增加配置 - dbh   - 数据库连接
-# 增加配置 - zark  - 凭证处理
 #
 $cfg->{svc}  = $svc;
 $cfg->{dbh}  = zkernel->zdbh();
-$cfg->{zark} = Zark->new(dbh => $cfg->{dbh}, proc => $proc, setup => 0,);
 
+# 增加配置 - zark  - 凭证处理
 # 增加配置 - dt    : 时间管理
 # 增加配置 - bip   : 银行协议配置
 # 增加配置 - batch : 批处理控制
 # 增加配置 - load  : 凭证批导
+# 增加配置 - pack  : 周期确认
+$cfg->{zark} = Zark->new(dbh => $cfg->{dbh}, proc => $proc, setup => 0,);
 $cfg->{dt}    = ZAPP::DT->new($cfg);
 $cfg->{bip}   = ZAPP::BIP::Config->new($cfg);
 $cfg->{load}  = ZAPP::YSPZ::Load->new($cfg, $load, 0);
 $cfg->{batch} = ZAPP::YSPZ::Batch->new($cfg);
+$cfg->{pack}  = ZAPP::PACK::Ack->new($cfg);
 
 # 返回值
 $cfg;
