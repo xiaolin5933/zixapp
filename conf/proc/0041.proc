@@ -1,0 +1,64 @@
+[
+  {
+    'd_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'db_id' => '24',
+    'fid' => '1.1',
+    'jb_id' => '5',
+    'j_dim' => [
+                 'c',
+                 'period'
+               ],
+    'amt' => 'cfee_back'
+  },
+  {
+    'd_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'db_id' => '17',
+    'fid' => '1.2',
+    'jb_id' => '25',
+    'j_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'amt' => 'cfee_back'
+  },
+  {
+    'd_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'db_id' => '17',
+    'fid' => '1.3',
+    'jb_id' => '11',
+    'j_dim' => [
+                 'c',
+                 'cust_proto',
+                 'period',
+                 'tx_date'
+               ],
+    'amt' => 'cwws_cfee_back'
+  },
+  {
+    'd_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'db_id' => '33',
+    'fid' => '2.1',
+    'jb_id' => '34',
+    'j_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'amt' => 'in_cost'
+  }
+];

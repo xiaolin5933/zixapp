@@ -1,0 +1,30 @@
+[
+  {
+    'd_dim' => [
+                 'bi',
+                 'period',
+                 'tx_date'
+               ],
+    'db_id' => '19',
+    'fid' => '1.1',
+    'jb_id' => '26',
+    'j_dim' => [
+                 'period'
+               ],
+    'amt' => 'tx_amt'
+  },
+  {
+    'd_dim' => [
+                 'period'
+               ],
+    'db_id' => '23',
+    'fid' => '1.2',
+    'jb_id' => '13',
+    'j_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'amt' => 'tx_amt'
+  }
+];

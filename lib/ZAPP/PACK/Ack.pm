@@ -67,7 +67,7 @@ EOF
 
     # 折扣比例>0时，(指定确认规则id按各核算项分类汇总暂估手续费, 进行分摊，并且(逐笔折扣后的汇总 - 实际算出来的手续费)进ark0)
     $self->{pack_yspz} = $self->{cfg}{dbh}->prepare(<<EOF);
-with pack_yspz(bi, c, fp, p, period, tx_date, bfee) as 
+with pack_yspz(bi, c, fp, p, period, tx_date, zg_bfee, bfee) as 
 (
     select  bi,
             c,
@@ -75,19 +75,20 @@ with pack_yspz(bi, c, fp, p, period, tx_date, bfee) as
             p,
             period,
             tx_date,
+            d - j                           as zg_bfee,
             round((d - j) * ? / 1000000, 0) as bfee
     from sum_bfee_zqqr_zg
     where fp = ? and tx_date >= ? and tx_date <= ?
 )
 select * from pack_yspz 
 union
-select null as bi, null as c, fp, null as p, null as period, null as tx_date, sum(bfee) - ? as bfee 
+select null as bi, null as c, fp, null as p, null as period, null as tx_date, 0 as zg_bfee, sum(bfee) - ? as bfee 
 from pack_yspz group by fp
 EOF
 
     # 折扣比例<=0时，实际算出来的手续费直接进入ark0
     $self->{pack_yspz1} = $self->{cfg}{dbh}->prepare(<<EOF);
-select null as bi, null as c, fp, null as p, null as period, null as tx_date, sum(bfee) - ? as bfee 
+select null as bi, null as c, fp, null as p, null as period, null as tx_date, sum(zg_bfee) as zg_bfee, 0  as bfee 
 from (
     select  bi,
             c,
@@ -95,7 +96,7 @@ from (
             p,
             period,
             tx_date,
-            round((d - j) * ? / 1000000, 0) as bfee
+            d - j                           as zg_bfee
     from sum_bfee_zqqr_zg
     where fp = ? and tx_date >= ? and tx_date <= ?
 ) as t1
@@ -152,7 +153,6 @@ sub ack {
             warn "inst verify can not get result" if DEBUG;
             return;
         }
-        warn "res: " . Data::Dump->dump($res);
         # 如果没有返回确认周期，那么控制表修改为(-1 未达确认周期状态),停止整个处理
         unless ($res->[RES_PBFEE][RES_PBFEE_PERIOD]) {
             #### 将控制表修改为(-1 未达确认周期状态)
@@ -352,9 +352,12 @@ sub _export_file {
     }
     # 实际汇总手续费
     my $bfee;
+    # 实际总银行手续费划付类型，0 备付金付， 1 财务外付
+    my $bfee_type;
     # 备付金手续费
     if (defined $res->[RES_PBFEE][RES_PBFEE_BFJ_FEE]) {
         $bfee = $res->[RES_PBFEE][RES_PBFEE_BFJ_FEE];
+        $bfee_type = 0;
     }
     # 自有资金手续费
     elsif (defined $res->[RES_PBFEE][RES_PBFEE_ZYZJ_FEE]) {
@@ -363,6 +366,7 @@ sub _export_file {
     # 财务外付手续费
     elsif (defined $res->[RES_PBFEE][RES_PBFEE_CWWF_FEE]) {
         $bfee = $res->[RES_PBFEE][RES_PBFEE_CWWF_FEE];
+        $bfee_type = 1;
     }
     unless (defined $bfee) {
         # 实际汇总手续费没有定义
@@ -391,15 +395,16 @@ sub _export_file {
     # 单笔暂估折扣出来的值是进行四舍五入
     # 折扣比例 > 0 就分摊成本
     if ($ratio > 0) {
+        warn "$ratio, $args->{ack_id}, $begin, $end, $bfee";
         $self->{pack_yspz}->execute($ratio, $args->{ack_id}, $begin, $end, $bfee);
         $sth_pack = $self->{pack_yspz};
     }
     # 折扣比例 <= 0 就把实际算出总额放入ark0
     elsif ($ratio <= 0) {
-        $self->{pack_yspz1}->execute($bfee, $ratio, $args->{ack_id}, $begin, $end);
+        $self->{pack_yspz1}->execute($bfee, $args->{ack_id}, $begin, $end);
         $sth_pack = $self->{pack_yspz1};
     }
-    unless ($args->{sm_date} =~ /\d{4}-\d{2}-\d{2}/) {
+    unless ($args->{sm_date} =~ /(\d{4})-(\d{2})-(\d{2})/) {
         warn "args->{sm_date}[$args->{sm_date}] format is error" if DEBUG;
         return;
     }
@@ -412,7 +417,7 @@ sub _export_file {
     my $fd_pack = IO::File->new("> $file_pack");
     my $count = 0;
     while ( my $row = $sth_pack->fetchrow_hashref() ) {
-        if (my $str = $self->_pack_yspz($row)) {
+        if (my $str = $self->_pack_yspz($row, $bfee_type)) {
             $fd_pack->print($str . "\n");
             ++$count;
         }
@@ -438,18 +443,41 @@ sub _export_file {
 # 根据确认折扣算出来的一条记录生成 周期确认流水文件(0031)
 #
 sub _pack_yspz {
-    my ($self, $row) = @_;
+    my ($self, $row, $bfee_type) = @_;
     
-    my $str = sprintf(
-        "%s|%s|%s|%s|%s|%s|%s",
-        defined($row->{bi})      ? $row->{bi}      : '',
-        defined($row->{c})       ? $row->{c}       : '',
-        defined($row->{fp})      ? $row->{fp}      : '',
-        defined($row->{p})       ? $row->{p}       : '',
-        defined($row->{period})  ? $row->{period}  : '',
-        defined($row->{tx_date}) ? $row->{tx_date} : '',
-        defined($row->{bfee})    ? $row->{bfee}    : ''
-    );
+    my $str;
+    # 备付金付
+    if ($bfee_type == 0) {
+        $str = sprintf(
+            "%s|%s|%s|%s|%s|%s|%s|%s|%s",
+            defined($row->{bi})      ? $row->{bi}      : '',
+            defined($row->{c})       ? $row->{c}       : '',
+            defined($row->{fp})      ? $row->{fp}      : '',
+            defined($row->{p})       ? $row->{p}       : '',
+            defined($row->{period})  ? $row->{period}  : '',
+            defined($row->{tx_date}) ? $row->{tx_date} : '',
+            defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',
+            defined($row->{bfee})    ? $row->{bfee}    : '0',
+            '0'
+        );
+    }
+    # 财务外付
+    elsif ($bfee_type == 1) {
+        $str = sprintf(
+            "%s|%s|%s|%s|%s|%s|%s|%s|%s",
+            defined($row->{bi})      ? $row->{bi}      : '',
+            defined($row->{c})       ? $row->{c}       : '',
+            defined($row->{fp})      ? $row->{fp}      : '',
+            defined($row->{p})       ? $row->{p}       : '',
+            defined($row->{period})  ? $row->{period}  : '',
+            defined($row->{tx_date}) ? $row->{tx_date} : '',
+            defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',
+            '0'                                            ,
+            defined($row->{bfee})    ? $row->{bfee}    : '0'
+        );
+    }
+
+    return $str;
 }
 
 1;

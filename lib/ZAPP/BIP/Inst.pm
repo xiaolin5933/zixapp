@@ -244,7 +244,7 @@ sub verify {
     }
 
     if ($zg_bfee != 0 ) {
-        $bfee_rec->[RES_PBFEE_RATIO]   = $bfee / $zg_bfee * 1000000;       # 总的打折比例
+        $bfee_rec->[RES_PBFEE_RATIO]   = int($bfee / $zg_bfee * 1000000 + 0.5);       # 总的打折比例
     }
     $bfee_rec->[RES_PBFEE_FP_ID]   = $req->{ack_id};                       # 确认规则id
     $bfee_rec->[RES_PBFEE_PERIOD]  = [$period->{begin}, $period->{end}];   # 确认规则下指定周期
