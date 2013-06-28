@@ -175,7 +175,7 @@ sub is_wday_dt {
     my $year = $dt->year();
     my $day = $dt->day_of_year();
     unless($self->{$year}) {
-        confess "ERROR: 无法计算, 只有[" . join(',', sort keys @{$self}) . "], 需要[$year]";
+        confess "ERROR: 无法计算, 只有[" . join(',', sort keys %{$self}) . "], 需要[$year]";
     }
     return $self unless $self->{$year}->{holiday}[$day];
     return; 

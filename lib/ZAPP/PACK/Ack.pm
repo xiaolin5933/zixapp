@@ -417,7 +417,7 @@ sub _export_file {
     my $fd_pack = IO::File->new("> $file_pack");
     my $count = 0;
     while ( my $row = $sth_pack->fetchrow_hashref() ) {
-        if (my $str = $self->_pack_yspz($row, $bfee_type)) {
+        if (my $str = $self->_pack_yspz($row, $bfee_type, $res)) {
             $fd_pack->print($str . "\n");
             ++$count;
         }
@@ -443,13 +443,13 @@ sub _export_file {
 # 根据确认折扣算出来的一条记录生成 周期确认流水文件(0031)
 #
 sub _pack_yspz {
-    my ($self, $row, $bfee_type) = @_;
+    my ($self, $row, $bfee_type, $res) = @_;
     
     my $str;
     # 备付金付
     if ($bfee_type == 0) {
         $str = sprintf(
-            "%s|%s|%s|%s|%s|%s|%s|%s|%s",
+            "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
             defined($row->{bi})      ? $row->{bi}      : '',
             defined($row->{c})       ? $row->{c}       : '',
             defined($row->{fp})      ? $row->{fp}      : '',
@@ -457,6 +457,8 @@ sub _pack_yspz {
             defined($row->{period})  ? $row->{period}  : '',
             defined($row->{tx_date}) ? $row->{tx_date} : '',
             defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',
+            defined($res->[RES_PBFEE][RES_PBFEE_BFJ_ACCT]) ? $res->[RES_PBFEE][RES_PBFEE_BFJ_ACCT] : '',
+            defined($res->[RES_PBFEE][RES_PBFEE_BFJ_DATE]) ? $res->[RES_PBFEE][RES_PBFEE_BFJ_DATE] : '',
             defined($row->{bfee})    ? $row->{bfee}    : '0',
             '0'
         );
@@ -464,7 +466,7 @@ sub _pack_yspz {
     # 财务外付
     elsif ($bfee_type == 1) {
         $str = sprintf(
-            "%s|%s|%s|%s|%s|%s|%s|%s|%s",
+            "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
             defined($row->{bi})      ? $row->{bi}      : '',
             defined($row->{c})       ? $row->{c}       : '',
             defined($row->{fp})      ? $row->{fp}      : '',
@@ -472,6 +474,8 @@ sub _pack_yspz {
             defined($row->{period})  ? $row->{period}  : '',
             defined($row->{tx_date}) ? $row->{tx_date} : '',
             defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',
+            '',
+            '',
             '0'                                            ,
             defined($row->{bfee})    ? $row->{bfee}    : '0'
         );
