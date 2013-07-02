@@ -82,7 +82,7 @@ with pack_yspz(bi, c, fp, p, period, tx_date, zg_bfee, bfee) as
 )
 select * from pack_yspz 
 union
-select 0 as bi, null as c, fp, 0 as p, null as period, null as tx_date, 0 as zg_bfee, sum(bfee) - ? as bfee 
+select null as bi, null as c, fp, null as p, null as period, null as tx_date, 0 as zg_bfee, sum(bfee) - ? as bfee 
 from pack_yspz group by fp
 EOF
 
@@ -209,18 +209,18 @@ sub ack {
     my $timeout   = 3600;      # 超时时间为1个小时
     my $timecount = 0;        # 已运行时间
     while (1) {
-        my $m = $self->mission_type(PACK_YSPZ, $args->{sm_date});
+        my $m = $self->{cfg}{batch}->mission_type(PACK_YSPZ, $args->{sm_date});
         # 如果mission状态为失败， 那么更新为(-3 确认失败)
         if ($m->{status} == MISSION_FAIL_RUN) {
             #### 将控制表修改为(-3 确认失败)
-            $self->{upd_m}->execute(PMISSION_FAIL, $m->{id});
+            $self->{upd_m}->execute(PMISSION_FAIL, $mission->{id});
             $self->{cfg}{dbh}->commit(); 
             last;
         }
         # 如果mission状态为成功，那么更新为(4 确认成功)
         elsif ($m->{status} == MISSION_SUCCESS) {
             #### 将控制表修改为(4 确认成功)
-            $self->{upd_m}->execute(PMISSION_SUCCESS, $m->{id});
+            $self->{upd_m}->execute(PMISSION_SUCCESS, $mission->{id});
             $self->{cfg}{dbh}->commit();
             last;
         }
@@ -289,7 +289,7 @@ sub ack {
         # 请求失败
         else {
             #### 将控制表修改为(-3 确认失败)
-            $self->{upd_m}->execute(PMISSION_FAIL, $m->{id});
+            $self->{upd_m}->execute(PMISSION_FAIL, $mission->{id});
             $self->{cfg}{dbh}->commit();
             last;
         }
@@ -297,7 +297,7 @@ NEXT:
         # 如果运行时间 >= 超时时间，那么设置为确认失败
         if ($timecount >= $timeout) {
             #### 将控制表修改为(-3 确认失败)
-            $self->{upd_m}->execute(PMISSION_FAIL, $m->{id});
+            $self->{upd_m}->execute(PMISSION_FAIL, $mission->{id});
             $self->{cfg}{dbh}->commit();
             last;
         }
@@ -450,15 +450,15 @@ sub _pack_yspz {
     if ($bfee_type == 0) {
         $str = sprintf(
             "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-            defined($row->{bi})      ? $row->{bi}      : '',
+            defined($row->{bi})      ? $row->{bi}      : '0',
             defined($row->{c})       ? $row->{c}       : '',
-            defined($row->{fp})      ? $row->{fp}      : '',
-            defined($row->{p})       ? $row->{p}       : '',
-            defined($row->{period})  ? $row->{period}  : '',
-            defined($row->{tx_date}) ? $row->{tx_date} : '',
+            $row->{fp},
+            defined($row->{p})       ? $row->{p}       : '0',
+            defined($row->{period})  ? $row->{period}  : $res->[RES_PBFEE][RES_PBFEE_PERIOD][1],
+            defined($row->{tx_date}) ? $row->{tx_date} : $res->[RES_PBFEE][RES_PBFEE_PERIOD][1],
             defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',
-            defined($res->[RES_PBFEE][RES_PBFEE_BFJ_ACCT]) ? $res->[RES_PBFEE][RES_PBFEE_BFJ_ACCT] : '',
-            defined($res->[RES_PBFEE][RES_PBFEE_BFJ_DATE]) ? $res->[RES_PBFEE][RES_PBFEE_BFJ_DATE] : '',
+            $res->[RES_PBFEE][RES_PBFEE_BFJ_ACCT],
+            $res->[RES_PBFEE][RES_PBFEE_BFJ_DATE],
             defined($row->{bfee})    ? $row->{bfee}    : '0',
             '0'
         );
@@ -468,12 +468,12 @@ sub _pack_yspz {
         # bi|c|fp|p|period|tx_date|zg_bfee|bfj_acct|zjbd_date|bfj_bfee|cwwf_bfee
         $str = sprintf(
             "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-            defined($row->{bi})      ? $row->{bi}      : '',    # bi
-            defined($row->{c})       ? $row->{c}       : '',    # c
-            defined($row->{fp})      ? $row->{fp}      : '',    # fp
-            defined($row->{p})       ? $row->{p}       : '',    # p
-            defined($row->{period})  ? $row->{period}  : '',    # period
-            defined($row->{tx_date}) ? $row->{tx_date} : '',    # tx_date
+            defined($row->{bi})      ? $row->{bi}      : '0',    # bi
+            defined($row->{c})       ? $row->{c}       : '',     # c
+            $row->{fp},                                          # fp
+            defined($row->{p})       ? $row->{p}       : '0',    # p
+            defined($row->{period})  ? $row->{period}  : $res->[RES_PBFEE][RES_PBFEE_PERIOD][1],    # period
+            defined($row->{tx_date}) ? $row->{tx_date} : $res->[RES_PBFEE][RES_PBFEE_PERIOD][1],    # tx_date
             defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',   # zg_bfee
             '',                                                 # bfj_acct
             '',                                                 # zjbd_date
