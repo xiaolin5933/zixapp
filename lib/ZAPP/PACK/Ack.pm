@@ -82,7 +82,7 @@ with pack_yspz(bi, c, fp, p, period, tx_date, zg_bfee, bfee) as
 )
 select * from pack_yspz 
 union
-select null as bi, null as c, fp, null as p, null as period, null as tx_date, 0 as zg_bfee, sum(bfee) - ? as bfee 
+select 0 as bi, null as c, fp, 0 as p, null as period, null as tx_date, 0 as zg_bfee, sum(bfee) - ? as bfee 
 from pack_yspz group by fp
 EOF
 
@@ -465,19 +465,20 @@ sub _pack_yspz {
     }
     # 财务外付
     elsif ($bfee_type == 1) {
+        # bi|c|fp|p|period|tx_date|zg_bfee|bfj_acct|zjbd_date|bfj_bfee|cwwf_bfee
         $str = sprintf(
             "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-            defined($row->{bi})      ? $row->{bi}      : '',
-            defined($row->{c})       ? $row->{c}       : '',
-            defined($row->{fp})      ? $row->{fp}      : '',
-            defined($row->{p})       ? $row->{p}       : '',
-            defined($row->{period})  ? $row->{period}  : '',
-            defined($row->{tx_date}) ? $row->{tx_date} : '',
-            defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',
-            '',
-            '',
-            '0'                                            ,
-            defined($row->{bfee})    ? $row->{bfee}    : '0'
+            defined($row->{bi})      ? $row->{bi}      : '',    # bi
+            defined($row->{c})       ? $row->{c}       : '',    # c
+            defined($row->{fp})      ? $row->{fp}      : '',    # fp
+            defined($row->{p})       ? $row->{p}       : '',    # p
+            defined($row->{period})  ? $row->{period}  : '',    # period
+            defined($row->{tx_date}) ? $row->{tx_date} : '',    # tx_date
+            defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',   # zg_bfee
+            '',                                                 # bfj_acct
+            '',                                                 # zjbd_date
+            '0'                                            ,    # bfj_bfee
+            defined($row->{bfee})    ? $row->{bfee}    : '0'    # cwwf_bfee
         );
     }
 
