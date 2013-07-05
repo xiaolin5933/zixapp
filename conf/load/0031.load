@@ -1,0 +1,76 @@
+#!/usr/bin/perl
+use ZAPP::BIP::Constant;
+
+#
+# $self => {
+#     cfg   => $cfg,
+#     inst  => {},
+# }
+#
+#
+sub {
+    my $self = shift;
+    #  文件记录
+    #-------------------------------------------------
+    #  0  bi                        | 9
+    #  1  c                         | ark1
+    #  2  fp                        | 1
+    #  3  p                         | 5
+    #  4  period                    | 2013-05-18
+    #  5  tx_date                   | 2013-05-18
+    #  6  sm_date                   | 2013-06-26
+    #  7  now                       | 20130703210000
+    #  8  zg_bfee                   | 200
+    #  9  bfj_acct                  | 
+    #  10 zjbd_date                 | 
+    #  11 bfj_bfee                  | 0
+    #  12 cwwf_bfee                 | 24242
+
+
+    chomp;
+    my $row         = [ split '\|', $_ ];
+
+    #
+    #  插入0031原始凭证
+    #  $load->yspz_ins_0031(@fld);
+    #-------------------------------------------------
+    #  备付金内扣银行账号                   :  f0:  bfj_acct
+    #  银行接口编号                         :  f1:  bi
+    #  确认规则                             :  f2:  fp
+    #  产品类型                             :  f3:  p
+    #  会计期间                             :  f4:  period
+    #  备付金内扣银行出账日期               :  f5:  zjbd_date_out
+    #  交易日期                             :  f6:  tx_date
+    #  扫描日期                             :  f7:  sm_date
+    #  确认编号                             :  f8:  cn
+    #  客户编号                             :  f9:  c
+    #  备注                                 :  f10: comm
+    #  冲销暂估银行手续费金额               :  f11: rp_bfee
+    #  周期确认备付金内扣银行手续费金额     :  f12: cc_bfee
+    #  周期确认财务外付银行手续费金额       :  f13: cc_cwwf_bfee
+
+
+    {
+        _type                   => '0031',
+        status                  => 0,
+
+        bfj_acct                => $row->[9], 
+        bi                      => $row->[0],
+        fp                      => $row->[2],
+        p                       => $row->[3],
+        period                  => $row->[4],
+        zjbd_date_out           => $row->[10],
+        tx_date                 => $row->[5],
+        sm_date                 => $row->[6],
+        cn                      => $row->[7] . '.' . $row->[2],
+        c                       => $row->[1],
+        comm                    => '',
+        rp_bfee                 => $row->[8],
+        cc_bfee                 => $row->[11],
+        cc_cwwf_bfee            => $row->[12],
+    };
+}
+
+__END__
+
+
