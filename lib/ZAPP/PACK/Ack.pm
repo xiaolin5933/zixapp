@@ -171,7 +171,7 @@ sub ack {
         $self->{upd_m}->execute(PMISSION_SUCCESS_EXPORT, $mission->{id});
         $self->{cfg}{dbh}->commit();
     }
-    return 1;
+    #return 1;
     # 生成mission, 将控制表状态更新为(3 确认中)
     my $m_id;
     eval {
@@ -276,7 +276,7 @@ sub ack {
 
         my $res = $ua->post($url => json => $req)->res->json;
         # 发送请求成功
-        if ($res->{status} ==  0) {
+        if ($res->{status} eq  0) {
             # 如果action为'assign_job', 那么$status=1 表示调用了assign_job
             if ($req->{action} eq 'assign_job') {
                 $status = 1;
@@ -415,9 +415,11 @@ sub _export_file {
     my $file_pack = "$dir_pack" . "/0031.src";
     mkpath($dir_pack);
     my $fd_pack = IO::File->new("> $file_pack");
-    my $count = 0;
+    my $count   = 0;
+    my $dt      = DateTime->now('time_zone' => 'local');
+    my $now     = $dt->ymd('') . $dt->hms('');
     while ( my $row = $sth_pack->fetchrow_hashref() ) {
-        if (my $str = $self->_pack_yspz($row, $bfee_type, $res)) {
+        if (my $str = $self->_pack_yspz($row, $bfee_type, $res, $now)) {
             $fd_pack->print($str . "\n");
             ++$count;
         }
@@ -443,19 +445,21 @@ sub _export_file {
 # 根据确认折扣算出来的一条记录生成 周期确认流水文件(0031)
 #
 sub _pack_yspz {
-    my ($self, $row, $bfee_type, $res) = @_;
+    my ($self, $row, $bfee_type, $res, $now) = @_;
     
     my $str;
     # 备付金付
     if ($bfee_type == 0) {
         $str = sprintf(
-            "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+            "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
             defined($row->{bi})      ? $row->{bi}      : '0',
-            defined($row->{c})       ? $row->{c}       : '',
+            defined($row->{c})       ? $row->{c}       : '-1',
             $row->{fp},
             defined($row->{p})       ? $row->{p}       : '0',
             defined($row->{period})  ? $row->{period}  : $res->[RES_PBFEE][RES_PBFEE_PERIOD][1],
             defined($row->{tx_date}) ? $row->{tx_date} : $res->[RES_PBFEE][RES_PBFEE_PERIOD][1],
+            $res->[RES_PBFEE][RES_PBFEE_SM_DATE],
+            $now,
             defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',
             $res->[RES_PBFEE][RES_PBFEE_BFJ_ACCT],
             $res->[RES_PBFEE][RES_PBFEE_BFJ_DATE],
@@ -465,20 +469,22 @@ sub _pack_yspz {
     }
     # 财务外付
     elsif ($bfee_type == 1) {
-        # bi|c|fp|p|period|tx_date|zg_bfee|bfj_acct|zjbd_date|bfj_bfee|cwwf_bfee
+        # bi|c|fp|p|period|tx_date|sm_date|now|zg_bfee|bfj_acct|zjbd_date|bfj_bfee|cwwf_bfee
         $str = sprintf(
-            "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+            "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",
             defined($row->{bi})      ? $row->{bi}      : '0',    # bi
-            defined($row->{c})       ? $row->{c}       : '',     # c
+            defined($row->{c})       ? $row->{c}       : '-1',   # c
             $row->{fp},                                          # fp
             defined($row->{p})       ? $row->{p}       : '0',    # p
             defined($row->{period})  ? $row->{period}  : $res->[RES_PBFEE][RES_PBFEE_PERIOD][1],    # period
             defined($row->{tx_date}) ? $row->{tx_date} : $res->[RES_PBFEE][RES_PBFEE_PERIOD][1],    # tx_date
-            defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',   # zg_bfee
-            '',                                                 # bfj_acct
-            '',                                                 # zjbd_date
-            '0'                                            ,    # bfj_bfee
-            defined($row->{bfee})    ? $row->{bfee}    : '0'    # cwwf_bfee
+            $res->[RES_PBFEE][RES_PBFEE_SM_DATE],                # sm_date
+            $now,                                                # now
+            defined($row->{zg_bfee}) ? $row->{zg_bfee} : '0',    # zg_bfee
+            '',                                                  # bfj_acct
+            '',                                                  # zjbd_date
+            '0'                                            ,     # bfj_bfee
+            defined($row->{bfee})    ? $row->{bfee}    : '0'     # cwwf_bfee
         );
     }
 

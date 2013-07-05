@@ -14,3 +14,9 @@ comment on table  dict_dept       is '部门字典表';
 comment on column dict_dept.id    is '部门ID';
 comment on column dict_dept.name  is '部门名称';
 
+
+--
+-- 初始化
+--
+insert into dict_dept(id, name) values
+(1, '未知部门');

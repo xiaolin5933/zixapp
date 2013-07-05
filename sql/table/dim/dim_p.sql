@@ -28,6 +28,7 @@ comment on column dim_p.ts_c                 is '创建时间';
 --
 -- zark begin
 insert into dim_p(id, name) values
+( 0, '其他'),
 ( 1, '基金收款'),
 ( 2, '基金结算'),
 ( 3, '基金委托出款'),

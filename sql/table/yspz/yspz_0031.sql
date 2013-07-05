@@ -10,12 +10,12 @@ create table yspz_0031 (
     status                char(1) not null,
 
 -- 业务字段
-    bfj_acct              integer not null,
+    bfj_acct              integer,
     bi                    integer not null,
     fp                    integer not null,
     p                     integer not null,
     period                date not null,
-    zjbd_date_out         date not null,
+    zjbd_date_out         date,
     tx_date               date not null,
     sm_date               date not null,
     cn                    char(32) not null,
