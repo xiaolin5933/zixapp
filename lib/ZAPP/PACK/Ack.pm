@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Carp;
 use DateTime;
+use JSON::XS;
 use File::Path qw/mkpath/;
 use ZAPP::PACK::Constant;
 use ZAPP::YSPZ::Constant;
@@ -232,7 +233,7 @@ sub ack {
                 goto NEXT;
             }
             $req = {
-                action => 'assign_job',
+                action => "assign_job",
                 param  => {
                     mission_id => $m->{id},
                     date       => $m->{date},
@@ -247,7 +248,7 @@ sub ack {
                 goto NEXT;
             }
             $req = {
-                action => 'assign_job',
+                action => "assign_job",
                 param  => {
                     mission_id => $m->{id},
                     date       => $m->{date},
@@ -274,7 +275,11 @@ sub ack {
             goto NEXT;
         }
 
-        my $res = $ua->post($url => json => $req)->res->json;
+        warn "" . Data::Dump->dump($req);
+        my $reqstr = encode_json($req);
+        Data::Dump->dump($req);
+        #my $res = $ua->post($url => json => $req)->res->json;
+        my $res = $ua->post($url => $reqstr)->res->json;
         # 发送请求成功
         if ($res->{status} eq  0) {
             # 如果action为'assign_job', 那么$status=1 表示调用了assign_job

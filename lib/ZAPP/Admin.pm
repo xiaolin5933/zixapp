@@ -254,7 +254,7 @@ sub handle {
         $rtn->{ret} = $self->{cfg}{pack}->ack($req->{param});
     }
     else {
-        zkernel->error("invalid action[$req->{action}]");
+        zlogger->error("invalid action[$req->{action}]");
         $rtn->{status} = 1;
         $rtn->{errmsg} = "invalid action[$req->{action}]";
     }
