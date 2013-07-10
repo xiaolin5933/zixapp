@@ -89,7 +89,7 @@ EOF
 
     # 折扣比例<=0时，实际算出来的手续费直接进入ark0
     $self->{pack_yspz1} = $self->{cfg}{dbh}->prepare(<<EOF);
-select null as bi, null as c, fp, null as p, null as period, null as tx_date, sum(zg_bfee) as zg_bfee, 0  as bfee 
+select null as bi, null as c, fp, null as p, null as period, null as tx_date, sum(zg_bfee) as zg_bfee, ? - 0 as bfee 
 from (
     select  bi,
             c,
