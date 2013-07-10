@@ -275,9 +275,7 @@ sub ack {
             goto NEXT;
         }
 
-        warn "" . Data::Dump->dump($req);
         my $reqstr = encode_json($req);
-        Data::Dump->dump($req);
         #my $res = $ua->post($url => json => $req)->res->json;
         my $res = $ua->post($url => $reqstr)->res->json;
         # 发送请求成功
@@ -400,7 +398,6 @@ sub _export_file {
     # 单笔暂估折扣出来的值是进行四舍五入
     # 折扣比例 > 0 就分摊成本
     if ($ratio > 0) {
-        warn "$ratio, $args->{ack_id}, $begin, $end, $bfee";
         $self->{pack_yspz}->execute($ratio, $args->{ack_id}, $begin, $end, $bfee);
         $sth_pack = $self->{pack_yspz};
     }
@@ -414,7 +411,6 @@ sub _export_file {
         return;
     }
     my $sm_date = $1 . $2 . $3;
-    warn "sm_date: $sm_date";
     # 生成文件
     my $dir_pack  = "$ENV{ZIXAPP_HOME}/data/$sm_date";
     my $file_pack = "$dir_pack" . "/0031.src";
