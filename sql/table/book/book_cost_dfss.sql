@@ -7,7 +7,6 @@ create table book_cost_dfss (
     id                    bigint primary key not null,
 
     -- 核算项字段(核算项按名称排序)
-    c                     char(32) not null,
     p                     integer not null,
     period                date not null,
   
@@ -37,14 +36,13 @@ create sequence seq_cost_dfss as bigint start with 1 increment by 1 minvalue 1 n
 
 -- MQT表
 create table sum_cost_dfss as (
-    select c as c,
-        p as p,
+    select p as p,
         period as period,
         sum(j)     as j,
         sum(d)     as d,
         count(*)   as cnt
     from book_cost_dfss
-    group by c, p, period
+    group by p, period
 )
 data initially deferred refresh immediate
 in tbs_dat;

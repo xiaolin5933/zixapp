@@ -17,8 +17,8 @@ create table yspz_0041 (
     ssn                   char(32) not null unique,
     c                     char(32) not null,
     cust_proto            char(32) not null,
-    cwws_cfee_back        bigint not null,
-    cfee_back             bigint not null,
+    cwws_cfee             bigint not null,
+    cfee                  bigint not null,
     in_cost               bigint not null,
 
 -- revoke-concerned
@@ -44,8 +44,8 @@ comment on column yspz_0041.tx_date              is '交易日期';
 comment on column yspz_0041.ssn                  is '交易流水编号';
 comment on column yspz_0041.c                    is '客户编号';
 comment on column yspz_0041.cust_proto           is '客户协议编号';
-comment on column yspz_0041.cwws_cfee_back       is '财务外收客户手续费金额';
-comment on column yspz_0041.cfee_back            is '备付金内扣客户手续费金额';
+comment on column yspz_0041.cwws_cfee            is '财务外收客户手续费金额';
+comment on column yspz_0041.cfee                 is '备付金内扣客户手续费金额';
 comment on column yspz_0041.in_cost              is '内部成本金额';
 
 comment on column yspz_0041.flag                 is '撤销标志';

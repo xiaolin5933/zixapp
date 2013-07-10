@@ -11,7 +11,7 @@
                  'c',
                  'period'
                ],
-    'amt' => 'cfee_back'
+    'amt' => 'cfee'
   },
   {
     'd_dim' => [
@@ -26,7 +26,7 @@
                  'period',
                  'wlzj_type'
                ],
-    'amt' => 'cfee_back'
+    'amt' => 'cfee'
   },
   {
     'd_dim' => [
@@ -43,7 +43,7 @@
                  'period',
                  'tx_date'
                ],
-    'amt' => 'cwws_cfee_back'
+    'amt' => 'cwws_cfee'
   },
   {
     'd_dim' => [

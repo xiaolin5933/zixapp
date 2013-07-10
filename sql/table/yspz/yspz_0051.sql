@@ -16,7 +16,6 @@ create table yspz_0051 (
     period                date not null,
     tx_date               date not null,
     ssn                   char(32) not null unique,
-    c                     char(32) not null,
     ls_amt                bigint not null,
 
 -- revoke-concerned
@@ -41,7 +40,6 @@ comment on column yspz_0051.p                    is '产品类型 - POS收款';
 comment on column yspz_0051.period               is '会计期间';
 comment on column yspz_0051.tx_date              is '交易日期';
 comment on column yspz_0051.ssn                  is '交易流水编号';
-comment on column yspz_0051.c                    is '客户编号';
 comment on column yspz_0051.ls_amt               is '损失金额';
 
 comment on column yspz_0051.flag                 is '撤销标志';
