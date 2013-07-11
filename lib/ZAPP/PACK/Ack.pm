@@ -83,7 +83,7 @@ with pack_yspz(bi, c, fp, p, period, tx_date, zg_bfee, bfee) as
 )
 select * from pack_yspz 
 union
-select null as bi, null as c, fp, null as p, null as period, null as tx_date, 0 as zg_bfee, sum(bfee) - ? as bfee 
+select null as bi, null as c, fp, null as p, null as period, null as tx_date, 0 as zg_bfee, ? - sum(bfee) as bfee 
 from pack_yspz group by fp
 EOF
 
