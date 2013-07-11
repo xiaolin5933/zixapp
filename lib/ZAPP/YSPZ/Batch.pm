@@ -240,6 +240,7 @@ sub down_file {
     # 根据load_cfg下载文件 
     my $row = $self->{load_cfg}{$param->{type}};
     eval {
+        if ($row->{proto} eq '')
         my $down = Net::FTP->new($row->{host})              or confess "can not Net::FTP->new";
         $down->login(@{$row}{qw/user pass/})                or confess "can not login";
         $down->cwd($row->{rdir} . "/$date")                 or confess "can not cwd";

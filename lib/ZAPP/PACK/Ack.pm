@@ -172,7 +172,6 @@ sub ack {
         $self->{upd_m}->execute(PMISSION_SUCCESS_EXPORT, $mission->{id});
         $self->{cfg}{dbh}->commit();
     }
-    #return 1;
     # 生成mission, 将控制表状态更新为(3 确认中)
     my $m_id;
     eval {
