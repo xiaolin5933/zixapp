@@ -23,11 +23,11 @@ comment on column  load_cfg.fname  is '远程服务器文件名称';
 
 -- data
 insert into load_cfg(type, host, proto, user, pass, rdir, fname) values
-    ('0002', '127.0.0.1', '1', 'fund',   'fund',   'fund',      'fund-0002.dat'),
-    ('0003', '127.0.0.1', '1', 'fund',   'fund',   'fund',      'fund-0003.dat'),
-    ('0004', '127.0.0.1', '1', 'fund',   'fund',   'fund',      'fund-0004.dat'),
-    ('0007', '127.0.0.1', '1', 'fund',   'fund',   'fund',      'fund-0007.dat'),
-    ('0009', '127.0.0.1', '1', 'fund',   'fund',   'fund',      'fund-0009.dat'),
-    ('0016', '127.0.0.1', '1', 'pos-hn', 'pos-hn', 'pos-hn',    'pos-hn-0016.dat'),
-    ('0017', '127.0.0.1', '1', 'pos-hn', 'pos-hn', 'pos-hn',    'pos-hn-0017.dat'),
-    ('0031', '127.0.0.1', '2', 'pack',   'pack',   'pack',      'pack-0031.dat');
+    ('0002', '127.0.0.1', '1', 'fund',   'fund',   'fund',                'fund-0002.dat'),
+    ('0003', '127.0.0.1', '1', 'fund',   'fund',   'fund',                'fund-0003.dat'),
+    ('0004', '127.0.0.1', '1', 'fund',   'fund',   'fund',                'fund-0004.dat'),
+    ('0007', '127.0.0.1', '1', 'fund',   'fund',   'fund',                'fund-0007.dat'),
+    ('0009', '127.0.0.1', '1', 'fund',   'fund',   'fund',                'fund-0009.dat'),
+    ('0016', '127.0.0.1', '1', 'pos-hn', 'pos-hn', 'pos-hn',              'pos-hn-0016.dat'),
+    ('0017', '127.0.0.1', '1', 'pos-hn', 'pos-hn', 'pos-hn',              'pos-hn-0017.dat'),
+    ('0031', '127.0.0.1', '2', 'pack',   'pack',   '/tmp/data/pack',      'pack-0031.dat');

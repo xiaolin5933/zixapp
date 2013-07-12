@@ -1,5 +1,12 @@
 package ZAPP::YSPZ::Constant;
 
+# 常量
+# 凭证导入流水下载协议
+sub LOAD_PROTO_FTP      () { '1' } # Ftp
+sub LOAD_PROTO_FILE     () { '2' } # File
+sub LOAD_PROTO_HTTP     () { '3' } # HTTP
+
+# 状态
 sub MISSION_STARTABLE   () { 1 } # 可开始
 sub MISSION_DOWNING     () { 2 } # 下载中
 sub MISSION_ASSIGNABLE  () { 3 } # 可分配
@@ -19,6 +26,10 @@ sub JOB_FAIL            () { -1 } # 运行失败
 sub import {
 
     my $pkg = caller();
+    
+    *{ $pkg . "::LOAD_PROTO_FTP"      } = \&LOAD_PROTO_FTP     ;  # Ftp     
+    *{ $pkg . "::LOAD_PROTO_FILE"     } = \&LOAD_PROTO_FILE    ;  # File
+    *{ $pkg . "::LOAD_PROTO_HTTP"     } = \&LOAD_PROTO_HTTP    ;  # Http
 
     *{ $pkg . "::MISSION_STARTABLE"   } = \&MISSION_STARTABLE  ;  # 可开始
     *{ $pkg . "::MISSION_DOWNING"     } = \&MISSION_DOWNING    ;  # 下载中

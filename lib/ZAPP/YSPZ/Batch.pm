@@ -7,6 +7,7 @@ use DateTime;
 use ZAPP::YSPZ::Constant;
 use ZAPP::YSPZ::Load;
 use File::Path qw/mkpath/;
+use File::Copy;
 
 use constant {
     DEBUG => $ENV{ZAPP_YSPZ_BATCH_DEBUG} || 0,
@@ -234,20 +235,37 @@ sub down_file {
     $date =~ s/-//g;
 
     # 转到数据所在日期目录  
-    chdir "$ENV{ZIXAPP_HOME}/data/$date";
+    my $data_dir = "$ENV{ZIXAPP_HOME}/data/$date";
+    chdir $data_dir;
     my $ok_file = 'ok.' . $self->fname($param->{type}, $date);
    
     # 根据load_cfg下载文件 
     my $row = $self->{load_cfg}{$param->{type}};
     eval {
-        if ($row->{proto} eq '')
-        my $down = Net::FTP->new($row->{host})              or confess "can not Net::FTP->new";
-        $down->login(@{$row}{qw/user pass/})                or confess "can not login";
-        $down->cwd($row->{rdir} . "/$date")                 or confess "can not cwd";
-        $down->get($ok_file)                                or confess "can not get ok file";
-        $down->get($self->fname($param->{type}, $date, 1))  or confess "can not get file";
-        $down->quit;     
-        rename $self->fname($param->{type}, $date, 1), "$param->{type}.src" or confess "can not rename";
+        # 如果协议为Ftp
+        if ($row->{proto} eq LOAD_PROTO_FTP) {
+            my $down = Net::FTP->new($row->{host})              or confess "can not Net::FTP->new";
+            $down->login(@{$row}{qw/user pass/})                or confess "can not login";
+            $down->cwd($row->{rdir} . "/$date")                 or confess "can not cwd";
+            $down->get($ok_file)                                or confess "can not get ok file";
+            $down->get($self->fname($param->{type}, $date, 1))  or confess "can not get file";
+            $down->quit;     
+            rename $self->fname($param->{type}, $date, 1), "$param->{type}.src" or confess "can not rename";
+        }
+        # 如果协议为File
+        elsif ($row->{proto} eq LOAD_PROTO_FILE) {
+            my $rdir = "$row->{rdir}";
+            copy "$rdir/$date/$ok_file", $data_dir              or confess "can not get ok file";
+            copy "$rdir/$date/".$self->fname($param->{type}, $date, 1), "./$param->{type}.src" 
+                                                                or confess "can not get file";
+        }
+        # 如果协议为Http
+        elsif ($row->{proto} eq LOAD_PROTO_HTTP) {
+            confess "unsupport proto"; 
+        }
+        else {
+            confess "unkown proto";
+        }
     };
 
     #下载失败, 更新状态为下载失败
