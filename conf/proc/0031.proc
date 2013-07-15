@@ -1,0 +1,72 @@
+[
+  {
+    'd_dim' => [
+                 'bi',
+                 'c',
+                 'fp',
+                 'p',
+                 'period',
+                 'tx_date'
+               ],
+    'db_id' => '32',
+    'fid' => '1.1',
+    'jb_id' => '30',
+    'j_dim' => [
+                 'bi',
+                 'c',
+                 'fp',
+                 'p',
+                 'period',
+                 'tx_date'
+               ],
+    'amt' => 'rp_bfee'
+  },
+  {
+    'd_dim' => [
+                 'bi',
+                 'fp',
+                 'period',
+                 'tx_date'
+               ],
+    'db_id' => '31',
+    'fid' => '2.1',
+    'jb_id' => '12',
+    'j_dim' => [
+                 'bi',
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'amt' => 'cc_cwwf_bfee'
+  },
+  {
+    'd_dim' => [
+                 'bfj_acct',
+                 'period',
+                 'zjbd_date_out',
+                 'bi'
+               ],
+    'db_id' => '3',
+    'fid' => '2.2',
+    'jb_id' => '26',
+    'j_dim' => [
+                 'period'
+               ],
+    'amt' => 'cc_bfee'
+  },
+  {
+    'd_dim' => [
+                 'period'
+               ],
+    'db_id' => '23',
+    'fid' => '2.3',
+    'jb_id' => '12',
+    'j_dim' => [
+                 'bi',
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'amt' => 'cc_bfee'
+  }
+];

@@ -1,0 +1,110 @@
+[
+  {
+    'd_dim' => [
+                 'c',
+                 'period'
+               ],
+    'db_id' => '5',
+    'fid' => '1.1',
+    'jb_id' => '22',
+    'j_dim' => [
+                 'bfj_acct_bj',
+                 'period',
+                 'zjbd_date_in_bj',
+                 'bi'
+               ],
+    'amt' => 'tx_amt'
+  },
+  {
+    'd_dim' => [
+                 'c',
+                 'period'
+               ],
+    'db_id' => '5',
+    'fid' => '2.1',
+    'jb_id' => '24',
+    'j_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'amt' => 'cfee_back'
+  },
+  {
+    'd_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'db_id' => '25',
+    'fid' => '2.2',
+    'jb_id' => '17',
+    'j_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'amt' => 'cfee_back'
+  },
+  {
+    'd_dim' => [
+                 'c',
+                 'cust_proto',
+                 'period',
+                 'tx_date'
+               ],
+    'db_id' => '11',
+    'fid' => '2.3',
+    'jb_id' => '17',
+    'j_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'amt' => 'cwws_cfee_back'
+  },
+  {
+    'd_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'db_id' => '24',
+    'fid' => '3.1',
+    'jb_id' => '5',
+    'j_dim' => [
+                 'c',
+                 'period'
+               ],
+    'amt' => 'cfee'
+  },
+  {
+    'd_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'db_id' => '17',
+    'fid' => '3.2',
+    'jb_id' => '25',
+    'j_dim' => [
+                 'period',
+                 'wlzj_type'
+               ],
+    'amt' => 'cfee'
+  },
+  {
+    'd_dim' => [
+                 'c',
+                 'p',
+                 'period'
+               ],
+    'db_id' => '17',
+    'fid' => '3.3',
+    'jb_id' => '11',
+    'j_dim' => [
+                 'c',
+                 'cust_proto',
+                 'period',
+                 'tx_date'
+               ],
+    'amt' => 'cwws_cfee'
+  }
+];

@@ -1,10 +1,9 @@
 [
   {
     'd_dim' => [
-                 'bfj_acct_bj',
+                 'bi',
                  'period',
-                 'zjbd_date_out_bj',
-                 'bi'
+                 'tx_date'
                ],
     'db_id' => '29',
     'fid' => '1.1',
