@@ -39,10 +39,24 @@ sub child {
     warn "---------------";
     warn "child with:\n" . Data::Dump->dump($req);
 
+
     # 只有run_job的任务需要zark, load
     if ($req->{action} =~ /run_job/) {
         $cfg->{zark}->setup($cfg->{dbh});
         $cfg->{load}->setup();
+    }
+    # 只有pack的任务需要pack
+    elsif ($req->{action} =~ /pack/) {
+        $cfg->{pack}->setup();
+        # 子进程处理
+        no strict 'refs';
+        my $code = \&{"ZAPP::PACK::Ack::ack"};
+        $code->($cfg->{pack}, 
+                {
+                    sm_date     => $req->{param}{date},
+                    pmission_id => $req->{param}{pmission_id},
+                });
+        exit 0;
     }
 
     # 子进程处理
@@ -121,8 +135,7 @@ sub child {
 # {
 #    action => 'pack',
 #    param  => {
-#        sm_date    => $sm_date,        # 扫描日期(不能 >= 当前日期)
-#        ack_id     => $ack_id,         # 确认规则ID
+#        date    => $sm_date,        # 扫描日期(不能 >= 当前日期)
 #    }
 #
 # }
@@ -236,22 +249,24 @@ sub handle {
         $rtn->{ret} = $self->{cfg}{batch}->get_log($req->{param});
     }
     elsif ( $req->{action} =~ /pack/ ) {
-        my $job = $self->{cfg}{batch}->job($req->{param}{job_id});
-        my $name = 'Zbatch' .
-                   '-' . $date .
-                   '-' . $req->{param}{type} .
-                   '-' . 'load' .
-                   '-' . $job->{index};
-        my $rtn = zkernel->process_submit(
-            $name,
-            {
-               code => \&child,
-               para => [ $req ],
-               reap => 0,
-               size => 1,
-            },
-        );
-        $rtn->{ret} = $self->{cfg}{pack}->ack($req->{param});
+        if (my $pm_id = $self->{cfg}{pack}->pack_mission( { sm_date => $req->{param}{date} } )) {
+            $req->{pmission_id} = $pm_id; 
+            my $name = 'Zpack' .
+                        '-' . $date;
+            my $rtn = zkernel->process_submit(
+                $name,
+                {
+                    code => \&child,
+                    para => [ $req ],
+                    reap => 0,
+                    size => 1,
+                },
+            );
+        }
+        else {
+            $rtn->{status} = 1;
+            $rtn->{errmsg} = "pack error";
+        }
     }
     else {
         zlogger->error("invalid action[$req->{action}]");
