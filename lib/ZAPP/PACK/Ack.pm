@@ -51,14 +51,28 @@ sub setup {
 select * from pack_mission where id = ?
 EOF
 
-    # 通过确认id、扫描日期查询周期确认工作
+    # 通过扫描日期查询周期确认工作
     $self->{sel_m1} = $self->{cfg}{dbh}->prepare(<<EOF);
-select * from pack_mission where ack_id = ? and sm_date = ?
+select * from pack_mission where sm_date = ?
 EOF
 
     # 更新周期确认工作
     $self->{upd_m} = $self->{cfg}{dbh}->prepare(<<EOF);
 update pack_mission set status = ? where id = ?
+EOF
+
+    # 更新周期确认状态 与 packs
+    $self->{upd_m1} = $self->{cfg}{dbh}->prepare(<<EOF);
+update pack_mission set status = ?, packs = ? where id = ?
+EOF
+    
+    # 插入周期确认工作
+    $self->{ins_m} = $self->{cfg}{dbh}->prepare(<<EOF);
+insert into pack_mission values(?, ?, ?, ?, ?, default, default)
+EOF
+
+    $self->{seq_m} = $self->{cfg}{dbh}->prepare(<<EOF);
+values nextval for seq_pack_mission
 EOF
 
     # 指定确认规则id, 按交易日期分类汇总， 获取 暂估周期确认银行手续费
@@ -89,31 +103,139 @@ EOF
 
     # 折扣比例<=0时，实际算出来的手续费直接进入ark0
     $self->{pack_yspz1} = $self->{cfg}{dbh}->prepare(<<EOF);
-select null as bi, null as c, fp, null as p, null as period, null as tx_date, sum(zg_bfee) as zg_bfee, ? - 0 as bfee 
-from (
+with pack_yspz(bi, c, fp, p, period, tx_date, zg_bfee, bfee) as 
+(
     select  bi,
             c,
             fp,
             p,
             period,
             tx_date,
-            d - j                           as zg_bfee
+            d - j                           as zg_bfee,
+            0                               as bfee
     from sum_bfee_zqqr_zg
     where fp = ? and tx_date >= ? and tx_date <= ?
-) as t1
-group by fp
+)
+select * from pack_yspz 
+union
+select null as bi, null as c, fp, null as p, null as period, null as tx_date, 0 as zg_bfee, ? - 0 as bfee 
+from pack_yspz group by fp
 EOF
 
     return $self;
 }
 
+
+#
+# des
+#    周期确认生成pack_mission
 #
 # $args = {
-#   sm_date     => $sm_date,        # 扫描日期(不能 >= 当前日期)
-#   ack_id      => $ack_id,         # 确认规则ID
+#    sm_date => $sm_date,  
+# }
+#
+#
+sub pack_mission {
+    my ($self, $args) = @_;
+    # 接收到前台发送的扫描日期(扫描日期[个人认为是确认日期更好]不能>=当前日期) 
+    my $dt = DateTime->now('time_zone' => 'local');
+    my $date = $dt->ymd('-');
+    if ($args->{sm_date} ge $date) {
+        warn "sm_date >= now date" if DEBUG;
+        return;
+    }
+    # 根据扫描日期 获取周期确认规则控制信息
+    $self->{sel_m1}->execute($args->{sm_date});
+    my $mission = $self->{sel_m1}->fetchrow_hashref();
+    $self->{sel_m1}->finish();
+    # 如果没有获取到pack_mission, 插入pack_mission
+    my $id;
+    unless($mission) {
+        # 调用计费系统(packs接口)(在确认规则表中查找所有确认周期的终止日期正好等于扫描日期的确认规则集合)
+        my $config  = $self->{cfg}{bip};
+        my $inst    = $config->inst(); 
+        my $packs = $inst->packs(
+                        {
+                            sm_date => $args->{sm_date},
+                        }
+                    );
+        # 生成mission
+        # 如果确认规则集合是空的 -1 无; 如果确认规则集合不为空 1 可生成
+        eval {
+            $id = $self->_mission_id();
+            # 如果数组不为空, 1 可生成
+            if (@$packs) {
+                my $packstr = join ',', @$packs;
+                $self->{ins_m}->execute($id, $args->{sm_date}, PMISSION_STARTABLE, $packstr, undef);
+            } 
+            # 如果确认规则集合是空的 -1 无
+            else {
+                $self->{ins_m}->execute($id, $args->{sm_date}, PMISSION_NONE, undef, undef);
+            }
+            $self->{cfg}{dbh}->commit();
+        };
+        if ($@) {
+            warn "insert pack mission error[$@]" if DEBUG;
+            $self->{cfg}{dbh}->rollback();
+            return;
+        }
+    } 
+    # 如果获取到pack_mission, 更新pack_mission
+    else {
+        # 如果获取到记录且状态为2生成中 或 3生成成功 或 -1无，那么停止整个过程;
+        if ($mission->{status} == PMISSION_RUNNING_EXPORT || # 生成中
+            $mission->{status} == PMISSION_SUCCESS_EXPORT || # 生成成功
+            $mission->{status} == PMISSION_NONE              # 无
+            ) {
+            return;
+        }
+        else {
+            # 调用计费系统(packs接口)(在确认规则表中查找所有确认周期的终止日期正好等于扫描日期的确认规则集合)
+            my $config  = $self->{cfg}{bip};
+            my $inst    = $config->inst();
+            my $packs = $inst->packs(
+                            {
+                                sm_date => $args->{sm_date},
+                            }
+                        );
+            # 生成mission    
+            # 如果确认规则集合是空的 -1 无; 如果确认规则集合不为空 1 可生成
+            eval {
+                $id = $mission->{id};
+                # 如果确认规则集合不为空 1 可生成
+                if (@$packs) {
+                    my $packstr = join ',', @$packs;
+                    $self->{upd_m1}->execute(PMISSION_STARTABLE, $packstr, $id);
+                }
+                # 如果确认规则集合是空的 -1 无
+                else {
+                    $self->{upd_m1}->execute(PMISSION_NONE, undef, $id);
+                }
+                $self->{cfg}{dbh}->commit();
+            };
+            if ($@) {
+                warn "update pack mission error[$@]" if DEBUG;    
+                return;
+            }
+        }
+    }
+    return $id;
+}
+
+#
+# args = {
+#   sm_date      => $sm_date,        # 扫描日期(不能 >= 当前日期)
+#   pmission_id  => $pmission_id,    # pack mission id
 # }
 sub ack {
     my ($self, $args) = @_;
+
+    unless ($args->{sm_date} =~ /(\d{4})-(\d{2})-(\d{2})/) {
+        warn "date[$args->{sm_date}] format is error" if DEBUG; 
+        return;
+    }
+
+    my $sm_date = $1 . $2. $3;
 
     # 扫描日期不能 >= 当前日期
     my $dt = DateTime->now('time_zone' => 'local');
@@ -122,193 +244,94 @@ sub ack {
         warn "sm_date >= now date" if DEBUG;
         return;
     }
-   
-    # 根据确认规则id, 扫描日期 获取周期确认规则控制信息
-    $self->{sel_m1}->execute($args->{ack_id}, $args->{sm_date});
-    my $mission = $self->{sel_m1}->fetchrow_hashref();
-    $self->{sel_m1}->finish();
-    unless($mission) {
-        warn "can not get pack mission by ack_id[$args->{ack_id}] and sm_date[$args->{sm_date}]" if DEBUG;
-        return;    
+
+    $self->{sel_m}->execute($args->{pmission_id});
+    my $pack_mission = $self->{sel_m}->fetchrow_hashref();
+    $self->{sel_m}->finish();
+
+    # 如果控制表为 1可生成
+    if ($pack_mission->{status} == PMISSION_STARTABLE) {
+        #### 将控制表修改为(2 生成中)
+        $self->{upd_m}->execute(PMISSION_RUNNING_EXPORT, $pack_mission->{id}); 
+        $self->{cfg}{dbh}->commit();
+    }
+    # 如果控制表状态为其他
+    else {
+        # 停止整个流程
+        warn "pack_mission status is not PMISSION_STARTABLE" if DEBUG;
+        return;
     }
 
-    # 如果 状态为 可开始 或 导出失败，那么导出周期确认流水文件
-    if ($mission->{status} == PMISSION_STARTABLE || $mission->{status} == PMISSION_FAIL_EXPORT)  {
-        # 暂估周期确认银行手续费 科目指定确认规则按交易日期分类汇总
-        my %zg_bfee;
-        $self->{sum_zg}->execute($args->{ack_id});
-        while (my $row = $self->{sum_zg}->fetchrow_hashref())  {
-            $zg_bfee{$row->{tx_date}} = $row->{d} - $row->{j};
-        }
-        # 调用计费系统返回 实际总额，打折比例，确认周期
-        my $config  = $self->{cfg}{bip};
-        my $inst    = $config->inst();
-        my $res = $inst->verify( 
-            {
-                ack_id  => $args->{ack_id},
-                zg_bfee => \%zg_bfee,
-                sm_date => $args->{sm_date},
-            }
-        );
-        unless($res) {
-            warn "inst verify can not get result" if DEBUG;
-            return;
-        }
-        # 如果没有返回确认周期，那么控制表修改为(-1 未达确认周期状态),停止整个处理
-        unless ($res->[RES_PBFEE][RES_PBFEE_PERIOD]) {
-            #### 将控制表修改为(-1 未达确认周期状态)
-            $self->{upd_m}->execute(PMISSION_NO_PERIOD, $mission->{id});
-            $self->{cfg}{dbh}->commit();
-            return;         
-        }
-        # 导出一个sql语句查询出来的内容(指定确认规则id按各核算项分类汇总暂估手续费, 进行分摊，并且算出ark0)
-        unless($self->_export_file($args, $res)) {
-            #### 为(-2 导出文件失败), 停止整个处理
-            $self->{upd_m}->execute(PMISSION_FAIL_EXPORT, $mission->{id});
-            $self->{cfg}{dbh}->commit();
-            return
-        }
-        #### 将控制表状态改为(2 导出文件成功), 继续执行以下流程
-        $self->{upd_m}->execute(PMISSION_SUCCESS_EXPORT, $mission->{id});
-        $self->{cfg}{dbh}->commit();
+    # 如果没有packs，那么停止处理流程
+    unless ($pack_mission->{packs}) {
+        warn "packstr no data" if DEBUG;
+        return;
     }
-    # 生成mission, 将控制表状态更新为(3 确认中)
-    my $m_id;
+    my @packs = split ',', $pack_mission->{packs};
+    my $load_cfg = $self->{cfg}{batch}->load_cfg(PACK_YSPZ);
+    my $dir_pack = "$load_cfg->{rdir}/$sm_date";
+    mkpath($dir_pack);
+    my $fd_pack = IO::File->new("> " . "$dir_pack/" . $self->{cfg}{batch}->fname(PACK_YSPZ, $sm_date, 1));
     eval {
-        $m_id = $self->{cfg}{batch}->insert_mission(PACK_YSPZ, $args->{sm_date}, 0, 0, 0, MISSION_ASSIGNABLE);
-        $self->{cfg}{dbh}->commit();
+        for my $pack_id (@packs) {
+            # 暂估周期确认银行手续费 科目指定确认规则按交易日期分类汇总
+            my %zg_bfee;
+            $self->{sum_zg}->execute($pack_id);
+            while (my $row = $self->{sum_zg}->fetchrow_hashref())  {
+                $zg_bfee{$row->{tx_date}} = $row->{d} - $row->{j};
+            }
+            # 调用计费系统返回 实际总额，打折比例，确认周期
+            my $config  = $self->{cfg}{bip};
+            my $inst    = $config->inst();
+            my $res = $inst->verify(
+                {
+                    ack_id  => $pack_id,
+                    zg_bfee => \%zg_bfee,
+                    sm_date => $args->{sm_date},
+                }
+            );
+            # 导出一个sql语句查询出来的内容(指定确认规则id按各核算项分类汇总暂估手续费, 进行分摊，并且算出ark0)
+            my $ags = {
+                sm_date => $args->{sm_date},
+                ack_id  => $pack_id, 
+            };
+            unless($self->_export_file($ags, $res, $fd_pack)) {
+                #### 将控制表状态改为(-2 生成失败), 继续执行以下流程
+                $self->{upd_m}->execute(PMISSION_FAIL_EXPORT, $pack_mission->{id});
+                $self->{cfg}{dbh}->commit();
+                return;
+            }
+        }
+        # 文件生成完后，创建ok文件，并且上传
+        my $ok;
+        open $ok, ">$dir_pack/ok." . $self->{cfg}{batch}->fname(PACK_YSPZ, $sm_date)
+            or die "Cannot touch ok file";
+        $ok->close();
+        #### 将控制表状态改为(2 导出文件成功), 继续执行以下流程
+        $self->{upd_m}->execute(PMISSION_SUCCESS_EXPORT, $pack_mission->{id});
+        # 生成load_mission, 且commit
+        unless( 
+            $self->{cfg}{batch}->prep_mission(
+                {
+                    date => $args->{sm_date},
+                    type => PACK_YSPZ
+                }
+            )
+        ) {
+            die "can not prep_mission 0031 load mission";
+        }
+
     };
     if ($@) {
-        # 唯一键重复....
-        my $err    = $self->{cfg}{dbh}->err;
-        # 已经存在指定 load_mission， 继续
-        if ( $err =~ /803/ ) {
-            warn "insert load mission: unique index error" if DEBUG;
-        }
-        # 不能插入load_mission, 将控制表状态更新为(-3 确认失败), 停止继续以下流程 
-        else {
-            warn "can not insert load mission" if DEBUG;
-            #### 将控制表状态更新为(-3 确认失败)
-            $self->{upd_m}->execute(PMISSION_FAIL, $mission->{id});
-            $self->{cfg}{dbh}->commit();
-            return;
-        }
+        warn "export pack mission file error[$@]" if DEBUG;
+        $self->{cfg}{dbh}->rollback();
+        return;
     }
-    #### 将控制表状态更新为(3 确认中)
-    $self->{upd_m}->execute(PMISSION_RUNNING, $mission->{id});
-    $self->{cfg}{dbh}->commit();
+    $fd_pack->flush();
+    $fd_pack->close();
     
-    # 向系统发凭证导入命令(分配，导入)
-    require Mojo::UserAgent;
-    my $cfg = $self->{cfg};
-    my $url = 'http://127.0.0.1:' . $cfg->{main}->{port} . '/';
-    my $ua = Mojo::UserAgent->new;
-    my $req;
-    # 0 表示未开始调用; 1 表示调用了assign_job; 2 表示调用了run_mission
-    my $status    = 0;
-    my $timeout   = 3600;      # 超时时间为1个小时
-    my $timecount = 0;        # 已运行时间
-    while (1) {
-        my $m = $self->{cfg}{batch}->mission_type(PACK_YSPZ, $args->{sm_date});
-        # 如果mission状态为失败， 那么更新为(-3 确认失败)
-        if ($m->{status} == MISSION_FAIL_RUN) {
-            #### 将控制表修改为(-3 确认失败)
-            $self->{upd_m}->execute(PMISSION_FAIL, $mission->{id});
-            $self->{cfg}{dbh}->commit(); 
-            last;
-        }
-        # 如果mission状态为成功，那么更新为(4 确认成功)
-        elsif ($m->{status} == MISSION_SUCCESS) {
-            #### 将控制表修改为(4 确认成功)
-            $self->{upd_m}->execute(PMISSION_SUCCESS, $mission->{id});
-            $self->{cfg}{dbh}->commit();
-            last;
-        }
 
-        # mission 为可分配 -> 开始分配
-        if ($m->{status} == MISSION_ASSIGNABLE) {
-            # 已经调用过分配文件了
-            if ($status == 1) {
-                goto NEXT;
-            }
-            $req = {
-                action => "assign_job",
-                param  => {
-                    mission_id => $m->{id},
-                    date       => $m->{date},
-                    type       => $m->{type},
-                },
-            }; 
-        }
-        # mission 分配失败 -> 重新分配
-        elsif ($m->{status} == MISSION_FAIL_ASSIGN) {
-            # 已经调用过分配文件了
-            if ($status == 1) {
-                goto NEXT;
-            }
-            $req = {
-                action => "assign_job",
-                param  => {
-                    mission_id => $m->{id},
-                    date       => $m->{date},
-                    type       => $m->{type},
-                },
-            }; 
-        }
-        # mission 为可运行 -> 开始运行...
-        elsif ($m->{status} == MISSION_RUNNABLE) {
-            # 已经调用了运行
-            if ($status == 2) {
-                goto NEXT;
-            }
-            $req = {
-                action => 'run_mission',
-                param  => {
-                    mission_id => $m->{id},
-                    date       => $m->{date},
-                    type       => $m->{type},
-                },
-            };
-        }
-        else {
-            goto NEXT;
-        }
-
-        my $reqstr = encode_json($req);
-        #my $res = $ua->post($url => json => $req)->res->json;
-        my $res = $ua->post($url => $reqstr)->res->json;
-        # 发送请求成功
-        if ($res->{status} eq  0) {
-            # 如果action为'assign_job', 那么$status=1 表示调用了assign_job
-            if ($req->{action} eq 'assign_job') {
-                $status = 1;
-            }
-            # 如果action为'run_mission', 那么$status=2 表示调用了run_mission
-            elsif ($req->{action} eq 'run_mission') {
-                $status = 2;
-            }
-        }
-        # 请求失败
-        else {
-            #### 将控制表修改为(-3 确认失败)
-            $self->{upd_m}->execute(PMISSION_FAIL, $mission->{id});
-            $self->{cfg}{dbh}->commit();
-            last;
-        }
-NEXT:
-        # 如果运行时间 >= 超时时间，那么设置为确认失败
-        if ($timecount >= $timeout) {
-            #### 将控制表修改为(-3 确认失败)
-            $self->{upd_m}->execute(PMISSION_FAIL, $mission->{id});
-            $self->{cfg}{dbh}->commit();
-            last;
-        }
-        # 休眠5秒
-        sleep(5);
-        $timecount += 5;
-    }
-
-    return $self;
+    return $self; 
 }
 
 
@@ -344,7 +367,12 @@ NEXT:
 #   ret = 是否导出文件成功
 #
 sub _export_file {
-    my ($self, $args, $res) = @_;
+    my ($self, $args, $res, $fd_pack) = @_;
+
+    unless($res) {
+        warn "inst verify can not get result" if DEBUG;
+        return;
+    }
     # 打折比例
     my $ratio = $res->[RES_PBFEE][RES_PBFEE_RATIO];
     unless (defined $ratio) {
@@ -402,19 +430,10 @@ sub _export_file {
     }
     # 折扣比例 <= 0 就把实际算出总额放入ark0
     elsif ($ratio <= 0) {
-        $self->{pack_yspz1}->execute($bfee, $args->{ack_id}, $begin, $end);
+        $self->{pack_yspz1}->execute($args->{ack_id}, $begin, $end, $bfee);
         $sth_pack = $self->{pack_yspz1};
     }
-    unless ($args->{sm_date} =~ /(\d{4})-(\d{2})-(\d{2})/) {
-        warn "args->{sm_date}[$args->{sm_date}] format is error" if DEBUG;
-        return;
-    }
-    my $sm_date = $1 . $2 . $3;
     # 生成文件
-    my $dir_pack  = "$ENV{ZIXAPP_HOME}/data/$sm_date";
-    my $file_pack = "$dir_pack" . "/0031.src";
-    mkpath($dir_pack);
-    my $fd_pack = IO::File->new("> $file_pack");
     my $count   = 0;
     my $dt      = DateTime->now('time_zone' => 'local');
     my $now     = $dt->ymd('') . $dt->hms('');
@@ -430,13 +449,7 @@ sub _export_file {
         }
     }
     $fd_pack->flush();
-    $fd_pack->close();
     
-    # 文件生成完后，创建ok文件，并且上传
-    my $ok;
-    open $ok, ">$dir_pack/ok.pack-0031-$sm_date"
-        or die "Cannot touch ok file";
-    $ok->close();
 
     return 1;
 }
@@ -490,6 +503,17 @@ sub _pack_yspz {
 
     return $str;
 }
+
+#
+# 获取工作ID
+#
+sub _mission_id {
+    my $self = shift;
+    $self->{seq_m}->execute();
+    my ($id) = $self->{seq_m}->fetchrow_array();
+    return $id;
+}
+
 
 1;
 

@@ -168,25 +168,48 @@ sub fname {
     }
 }
 
+#
+# 获取指定原始凭证类型的load配置信息
+#
+sub load_cfg {
+    my ($self, $type) = @_;
+    return $self->{load_cfg}{$type};
+}
 
 #
 # 准备mission: 每日早上00:10分, 将在load_mission中插入mission记录
-# param => {date => '2013-03-25'}
+# param => {
+#    date => '2013-03-25',
+#    type => $ys_type(可选)     # 如果指定类型为 undef, 那么创建所有load_cfg的load_mission
+# }
 #
 sub prep_mission {
     my ($self, $param) = @_;
 
     # 向mission表中插入所有工作 : read table: load_cfg;
     eval {
-        for my $type (keys %{$self->{load_cfg}}) {
+        # 如果没有指定原始凭证类型，那么插入所有
+        unless( $param->{type} ) {
+            for my $type (keys %{$self->{load_cfg}}) {
+                # 如果原始凭证类型是0031, 那么不进行prep_mission
+                if ($type eq '0031') {
+                    next;
+                }
+                my $id = $self->_mission_id();
+                $self->{ins_m}->execute($id, $type, $param->{date}, 
+                                    0, 0, 0, MISSION_STARTABLE, undef);
+            }
+        }
+        # 如果指定类型类型，那么插入指定类型的
+        else {
             my $id = $self->_mission_id();
-            $self->{ins_m}->execute($id, $type, $param->{date}, 
+            $self->{ins_m}->execute($id, $param->{type}, $param->{date},
                                     0, 0, 0, MISSION_STARTABLE, undef);
         }
     };
     if ($@) {
         $self->{cfg}{dbh}->rollback();
-        return $self; 
+        return; 
     }
     $self->{cfg}{dbh}->commit();
 
@@ -207,6 +230,7 @@ sub insert_mission {
     my $id = $self->_mission_id();
     $self->{ins_m}->execute($id, $type, $date,
                             $total, $fail, $succ, $status, undef);
+
 
     return $id;
 }
@@ -236,6 +260,7 @@ sub down_file {
 
     # 转到数据所在日期目录  
     my $data_dir = "$ENV{ZIXAPP_HOME}/data/$date";
+    mkpath $data_dir;
     chdir $data_dir;
     my $ok_file = 'ok.' . $self->fname($param->{type}, $date);
    

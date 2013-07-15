@@ -205,7 +205,7 @@ sub verify {
         warn "can not find a frule_pack" if DEBUG;
         return;
     }
-    # 通过扫描日期找到最近已达到确认日期的周期区间
+    # 通过扫描日期找到已达到确认日期的周期区间
     my $period = $self->_find_frule_pack_period($req, $fp);
     unless ($period) {
         warn "can not find a frule_pack_period" if DEBUG;
@@ -243,6 +243,7 @@ sub verify {
         return;
     }
 
+
     if ($zg_bfee != 0 ) {
         $bfee_rec->[RES_PBFEE_RATIO]   = int($bfee / $zg_bfee * 1000000 + 0.5);       # 总的打折比例
     }
@@ -255,6 +256,32 @@ sub verify {
     return \@res;
 }
 
+#
+#  des:
+#       获取指定扫描日期为其中周期截止期的确认规则集合
+#  req = {
+#       sm_date   => '扫描日期(不能 >= 当前日期)',
+#  }
+#
+#  res =   [
+#       fp_id_1,
+#       fp_id_2,
+#       ......
+#  ]
+sub packs {
+    my ($self, $req) = @_; 
+    my @res;
+    for my $fp_id (keys %{$self->{pack}}) {
+        my $fp = $self->{pack}{$fp_id};
+        # 通过扫描日期在此确认规则中没有找到到期的周期, 那么看下一条确认规则
+        unless( $self->_find_frule_pack_period($req, $fp) ) {
+            next;
+        }
+        push @res, $fp_id; 
+    }
+    
+    return \@res;
+}
 
 ####################################################
 # 计算本金、手续费出入账日期
@@ -304,46 +331,19 @@ sub _inout_date {
 
 #
 # 查找周期确认规则的确认周期
-# req提供了sm_date, 通过其查找最近的到达确认日期的周期
+# req提供了sm_date, 通过其查找到达确认日期的周期
 #
 sub _find_frule_pack_period {
     my ($self, $req, $fp) = @_;
 
     my $period; 
-    my $index = -1;
     my $sm_date = $req->{sm_date};
     for my $ap (@{$fp->{ack_period}}) {
-        ++$index;
         # 如果扫描日期是周期最后一天， 那么就是此周期
         if ($sm_date eq $ap->{end}) {
             $period = $ap;
             last;
         }
-        # 如果扫描日期大于周期最后一天，那么看下一个周期
-        elsif ($sm_date gt $ap->{end}) {
-            next;
-        }
-        # 如果扫描日期小于周期最后一天，说明落于当前周期间
-        elsif ($sm_date lt $ap->{end}) {
-            # 那么如果当前至少是第2个周期内，那么用前一周期作为已查到周期
-            if ($index > 0) {
-                $period = $fp->{ack_period}[$index - 1];
-                last;
-            }
-            # 否则是落于第一区间内，那么表示没有一个周期已经到期
-            else {
-                $index = -1;
-                last;
-            }
-        }
-    }
-    unless ($period) {
-        # 如果没有找到period, 并且$index为-1，表示确实找不到一个已经到期的周期
-        if ($index == -1) {
-            return;
-        }
-        # 否则是最后一个周期
-        $period = $fp->{ack_period}[$index];
     }
 
     return $period;
