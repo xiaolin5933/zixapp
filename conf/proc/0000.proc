@@ -40,7 +40,8 @@ sub {
 
     };
     # 原始凭证
-    my $ys_id      = $self->yspz_ins_0000(@{$source}{@{$yspz_flist}});
+    my $id         = $self->yspz_id_0000();
+    my $ys_id      = $self->yspz_ins_0000($id, @{$source}{@{$yspz_flist}});
     $source->{id}  = $ys_id;
 
     for my $idx (keys %{$src->{data}->{jd_books}}) {

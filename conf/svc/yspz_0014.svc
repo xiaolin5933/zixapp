@@ -43,8 +43,10 @@ sub {
     $src->{period}      = $src->{zjbd_date_in};
     $src->{status}      = '0';
     #
+    my $id = $svc->{zark}->yspz_id($src->{_type});
     $src->{id} = $svc->{zark}->yspz_ins( 
         $src->{_type}, 
+        $id,
         @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
     );
     Data::Dump->dump($src);

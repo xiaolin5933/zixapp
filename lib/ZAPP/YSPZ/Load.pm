@@ -178,8 +178,10 @@ sub handle {
                 # 插入原始凭证(`处理成功)
                 # 处理原始凭证, 登记账簿
                 # 更新原始凭证处理状态
+                my $id = $self->{cfg}{zark}->yspz_id($yspz->{_type});
                 $yspz->{id} = $self->{cfg}{zark}->yspz_ins( 
                     $yspz->{_type}, 
+                    $id,
                     @{$yspz}{@{$self->{cfg}{zark}->yspz_flist($yspz->{_type})}},
                 );
                 $self->{cfg}{zark}->handle($yspz);

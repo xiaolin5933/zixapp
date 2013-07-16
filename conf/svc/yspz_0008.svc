@@ -46,8 +46,10 @@ sub {
     $src->{c}         = '51.' . $src->{c};
 
     # 插入原始凭证
+    my $id = $svc->{zark}->yspz_id($src->{_type});
     $src->{id} = $svc->{zark}->yspz_ins( 
         $src->{_type}, 
+        $id,
         @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
     );
     $svc->{dbh}->commit;

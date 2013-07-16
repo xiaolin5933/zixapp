@@ -40,8 +40,10 @@ sub {
     $src->{status}    = '0';
 
     #
+    my $id = $svc->{zark}->yspz_id($src->{_type});
     $src->{id} = $svc->{zark}->yspz_ins( 
         $src->{_type}, 
+        $id,
         @{$src}{@{$svc->{zark}->yspz_flist($src->{_type})}} 
     );
     $svc->{dbh}->commit;
